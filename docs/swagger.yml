@@ -1,0 +1,25 @@
+openapi: "3.0.0"
+info:
+  title: PDF to JSON API
+  version: "1.0"
+paths:
+  /convert:
+    post:
+      summary: Converte PDF em JSON
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Conversão bem-sucedida
+          content:
+            application/json:
+              schema:
+                type: object

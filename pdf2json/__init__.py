@@ -1,0 +1,1 @@
+"""Módulo pdf2json: extração de PDF para JSON."""
