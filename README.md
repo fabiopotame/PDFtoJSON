@@ -28,4 +28,4 @@ A API estará disponível em `http://localhost:8085/`.
 
 ## Testes
 
-`./scripts/run_tests.sh`
+Leia o README na pasta tests
