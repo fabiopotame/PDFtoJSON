@@ -483,8 +483,8 @@ def extract_data_with_header_mapping(stream):
         'Container (Equipment ID)': {'x0': 86.1, 'x1': 128.8},
         'Categoria (Category)': {'x0': 134.9, 'x1': 164.9},
         'Armador (Line)': {'x0': 169.4, 'x1': 194.4},
-        'Manifesto Carga BL / Booking': {'x0': 199.5, 'x1': 246.2},
-        'Importador/Exportador (Consignee / Shipper)': {'x0': 250.8, 'x1': 334.5},
+        'Manifesto Carga BL / Booking': {'x0': 199.5, 'x1': 250.0},
+        'Importador/Exportador (Consignee / Shipper)': {'x0': 250.8, 'x1': 334.0},
         'CNPJ / CPF (ID)': {'x0': 335.0, 'x1': 390.0},
         'DT / DTA': {'x0': 392.0, 'x1': 439.0},
         'GMCI / GRCI': {'x0': 440.2, 'x1': 483.9},
@@ -495,6 +495,31 @@ def extract_data_with_header_mapping(stream):
         'Moeda (Currency)': {'x0': 751.3, 'x1': 781.7},
         'Valor (Unit Value)': {'x0': 788.0, 'x1': 831.0}
     }
+    
+    def is_blue_line(y_coord, lines, rects):
+        """Verifica se uma coordenada Y tem uma linha/retângulo azul"""
+        # Verificar linhas
+        for line in lines:
+            if abs(line['top'] - y_coord) < 5:
+                if 'stroking_color' in line and str(line['stroking_color']) == "(0.098, 0.098, 0.439)":
+                    return True
+                elif 'non_stroking_color' in line and str(line['non_stroking_color']) == "(0.098, 0.098, 0.439)":
+                    return True
+        # Verificar retângulos
+        for rect in rects:
+            if abs(rect['top'] - y_coord) < 5:
+                if 'non_stroking_color' in rect and str(rect['non_stroking_color']) == "(0.098, 0.098, 0.439)":
+                    return True
+                elif 'stroking_color' in rect and str(rect['stroking_color']) == "(0.098, 0.098, 0.439)":
+                    return True
+        return False
+    
+    def extract_text_by_coordinates(chars_list, x0, x1):
+        filtered_chars = [char for char in chars_list if x0 <= char['x0'] <= x1]
+        if filtered_chars:
+            sorted_chars = sorted(filtered_chars, key=lambda c: c['x0'])
+            return ''.join([c['text'] for c in sorted_chars]).strip()
+        return ''
     
     sections_data = []
     
@@ -510,60 +535,21 @@ def extract_data_with_header_mapping(stream):
                     char_lines[y_key] = []
                 char_lines[y_key].append(char)
             sorted_char_lines = sorted(char_lines.items(), key=lambda x: x[0])
-            i = 0
-            while i < len(sorted_char_lines):
-                y, line_chars = sorted_char_lines[i]
-                
-                # Otimização: ignorar header baseado na coordenada Y
-                if page_num == 0:
-                    if y <= PAGE1_START_Y:
-                        i += 1
-                        continue
-                else:
-                    if y <= OTHER_PAGES_START_Y:
-                        i += 1
-                        continue
-                
-                # Ignorar linhas do rodapé baseado na coordenada Y
-                if y >= FOOTER_Y_MIN:
-                    i += 1
+            
+            # PASSO 1: Mapear todas as seções (linhas azuis)
+            blue_sections = []
+            for i, (y, line_chars) in enumerate(sorted_char_lines):
+                if page_num == 0 and y <= PAGE1_START_Y:
                     continue
-                
-                sorted_chars = sorted(line_chars, key=lambda c: c['x0'])
-                background_color = None
-                for line in lines:
-                    if abs(line['top'] - y) < 5:
-                        if 'stroking_color' in line and line['stroking_color']:
-                            background_color = str(line['stroking_color'])
-                            break
-                        elif 'non_stroking_color' in line and line['non_stroking_color']:
-                            background_color = str(line['non_stroking_color'])
-                            break
-                if not background_color:
-                    for rect in rects:
-                        if abs(rect['top'] - y) < 5:
-                            if 'non_stroking_color' in rect and rect['non_stroking_color']:
-                                background_color = str(rect['non_stroking_color'])
-                                break
-                            elif 'stroking_color' in rect and rect['stroking_color']:
-                                background_color = str(rect['stroking_color'])
-                                break
-                if background_color == "(0.098, 0.098, 0.439)":
-                    # Linha azul encontrada: início de uma nova seção
-                    title_text = ""
-                    quantidade_text = ""
-                    total_text = ""
-                    for char in sorted_chars:
-                        if 7.2 <= char['x0'] <= 400:
-                            title_text += char['text']
-                        if 540 <= char['x0'] <= 700:
-                            quantidade_text += char['text']
-                        if 700 <= char['x0'] <= 820.8:
-                            total_text += char['text']
-                    title_text = title_text.strip()
-                    quantidade_text = quantidade_text.strip()
-                    total_text = total_text.strip()
-                    
+                elif page_num > 0 and y <= OTHER_PAGES_START_Y:
+                    continue
+                if y >= FOOTER_Y_MIN:
+                    continue
+                if is_blue_line(y, lines, rects):
+                    sorted_chars = sorted(line_chars, key=lambda c: c['x0'])
+                    title_text = extract_text_by_coordinates(sorted_chars, 7.2, 400)
+                    quantidade_text = extract_text_by_coordinates(sorted_chars, 540, 700)
+                    total_text = extract_text_by_coordinates(sorted_chars, 700, 820.8)
                     total_value = None
                     if total_text:
                         numbers = re.findall(r'[\d\.,]+', total_text)
@@ -578,143 +564,117 @@ def extract_data_with_header_mapping(stream):
                         numbers = re.findall(r'\d+', quantidade_text)
                         if numbers:
                             quantidade_value = int(numbers[0])
-                    
                     if title_text and any(section in title_text for section in [
                         'Armazenagem', 'Cadastro', 'Handling', 'Presenca', 'Repasse', 'Scanner']):
-                        
-                        # Buscar headers das colunas
-                        header_pt_found = False
-                        header_en_found = False
-                        j = i + 1
-                        while j < len(sorted_char_lines):
-                            next_y, next_chars = sorted_char_lines[j]
-                            
-                            # Otimização: ignorar header baseado na coordenada Y
-                            if page_num == 0:
-                                if next_y <= PAGE1_START_Y:
-                                    j += 1
-                                    continue
-                            else:
-                                if next_y <= OTHER_PAGES_START_Y:
-                                    j += 1
-                                    continue
-                            
-                            # Ignorar linhas do rodapé
-                            if next_y >= FOOTER_Y_MIN:
-                                j += 1
-                                continue
-                            
-                            next_text = ''.join([c['text'] for c in sorted(next_chars, key=lambda c: c['x0'])])
-                            if not header_pt_found and any(keyword in next_text for keyword in [
-                                'Data Inicial', 'Data Final', 'Container', 'Categoria', 'Armador',
-                                'Manifesto', 'Importador', 'Exportador', 'Observacoes']):
-                                header_pt_found = True
-                                j += 1
-                                continue
-                            if header_pt_found and not header_en_found and any(keyword in next_text for keyword in [
-                                'Start Time', 'End Time', 'Equipment', 'Category', 'Line',
-                                'Manifest', 'Consignee', 'Shipper', 'Notes']):
-                                header_en_found = True
-                                j += 1
-                                break
-                            j += 1
-                        
-                        # Coletar linhas de conteúdo até a próxima linha azul ou rodapé
-                        k = j
-                        while k < len(sorted_char_lines):
-                            content_y, content_chars = sorted_char_lines[k]
-                            # Otimização: ignorar header baseado na coordenada Y
-                            if page_num == 0:
-                                if content_y <= PAGE1_START_Y:
-                                    k += 1
-                                    continue
-                            else:
-                                if content_y <= OTHER_PAGES_START_Y:
-                                    k += 1
-                                    continue
-                            # Ignorar linhas do rodapé
-                            if content_y >= FOOTER_Y_MIN:
-                                break
-                            # Ignorar linhas de header
-                            content_text = ''.join([c['text'] for c in sorted(content_chars, key=lambda c: c['x0'])])
-                            if is_header_line(content_text):
-                                k += 1
-                                continue
-                            # Verificar se é uma nova linha azul (nova seção)
-                            is_new_section = False
-                            for line in lines:
-                                if abs(line['top'] - content_y) < 5:
-                                    if 'stroking_color' in line and str(line['stroking_color']) == "(0.098, 0.098, 0.439)":
-                                        is_new_section = True
-                                        break
-                                    elif 'non_stroking_color' in line and str(line['non_stroking_color']) == "(0.098, 0.098, 0.439)":
-                                        is_new_section = True
-                                        break
-                            if is_new_section:
-                                break
-                            # Extrair dados da linha atual
-                            row = {k: '' for k in header_mapping.keys()}
-                            for field_name, coords in header_mapping.items():
-                                field_value = ''
-                                for char in content_chars:
-                                    if coords['x0'] <= char['x0'] <= coords['x1']:
-                                        field_value += char['text']
-                                row[field_name] = field_value.strip() or None
-                            # Só adicionar se for linha de dados válida
-                            if is_valid_data_row(row):
-                                # Concatenação de linhas multi-linha para TODOS os campos
-                                k_next = k + 1
-                                while k_next < len(sorted_char_lines):
-                                    next_y, next_chars = sorted_char_lines[k_next]
-                                    if next_y >= FOOTER_Y_MIN:
-                                        break
-                                    next_text = ''.join([c['text'] for c in sorted(next_chars, key=lambda c: c['x0'])])
-                                    if is_header_line(next_text):
-                                        break
-                                    is_new_section_next = False
-                                    for line in lines:
-                                        if abs(line['top'] - next_y) < 5:
-                                            if 'stroking_color' in line and str(line['stroking_color']) == "(0.098, 0.098, 0.439)":
-                                                is_new_section_next = True
-                                                break
-                                            elif 'non_stroking_color' in line and str(line['non_stroking_color']) == "(0.098, 0.098, 0.439)":
-                                                is_new_section_next = True
-                                                break
-                                    if is_new_section_next:
-                                        break
-                                    # Se encontrar CNPJ (mesmo igual ao anterior), é novo registro
-                                    cnpj_next = ''
-                                    for char in next_chars:
-                                        if header_mapping['CNPJ / CPF (ID)']['x0'] <= char['x0'] <= header_mapping['CNPJ / CPF (ID)']['x1']:
-                                            cnpj_next += char['text']
-                                    if cnpj_next.strip():
-                                        break
-                                    # Para cada campo, concatene o texto da faixa X
-                                    for field_name, coords in header_mapping.items():
-                                        field_value_next = ''
-                                        for char in next_chars:
-                                            if coords['x0'] <= char['x0'] <= coords['x1']:
-                                                field_value_next += char['text']
-                                        if field_value_next.strip():
-                                            if row[field_name]:
-                                                row[field_name] += ' ' + field_value_next.strip()
-                                            else:
-                                                row[field_name] = field_value_next.strip()
-                                    k_next += 1
-                                section_data = {
-                                    "Quantidade (Quantity)": quantidade_value,
-                                    "Title": title_text,
-                                    "Total": total_value,
-                                    "fields": [
-                                        {field_name: (value.strip() if isinstance(value, str) and value.strip() else None)
-                                         for field_name, value in row.items()}
-                                    ]
-                                }
-                                sections_data.append(section_data)
-                                k = k_next
-                            else:
-                                k += 1
-                i += 1
+                        blue_sections.append({
+                            'y': y,
+                            'index': i,
+                            'title': title_text,
+                            'quantidade': quantidade_value,
+                            'total': total_value
+                        })
+            # PASSO 2: Processar cada seção individualmente
+            for section_idx, section_info in enumerate(blue_sections):
+                section_y = section_info['y']
+                section_index = section_info['index']
+                next_section_y = None
+                if section_idx + 1 < len(blue_sections):
+                    next_section_y = blue_sections[section_idx + 1]['y']
+                header_pt_found = False
+                header_en_found = False
+                data_start_index = None
+                for j in range(section_index + 1, len(sorted_char_lines)):
+                    y, chars_line = sorted_char_lines[j]
+                    if next_section_y and y >= next_section_y:
+                        break
+                    if page_num == 0 and y <= PAGE1_START_Y:
+                        continue
+                    elif page_num > 0 and y <= OTHER_PAGES_START_Y:
+                        continue
+                    if y >= FOOTER_Y_MIN:
+                        break
+                    line_text = ''.join([c['text'] for c in sorted(chars_line, key=lambda c: c['x0'])])
+                    if not header_pt_found and any(keyword in line_text for keyword in [
+                        'Data Inicial', 'Data Final', 'Container', 'Categoria', 'Armador',
+                        'Manifesto', 'Importador', 'Exportador', 'Observacoes']):
+                        header_pt_found = True
+                        continue
+                    if header_pt_found and not header_en_found and any(keyword in line_text for keyword in [
+                        'Start Time', 'End Time', 'Equipment', 'Category', 'Line',
+                        'Manifest', 'Consignee', 'Shipper', 'Notes']):
+                        header_en_found = True
+                        data_start_index = j + 1
+                        break
+                section_fields = []
+                if data_start_index:
+                    k = data_start_index
+                    while k < len(sorted_char_lines):
+                        content_y, content_chars = sorted_char_lines[k]
+                        if next_section_y and content_y >= next_section_y:
+                            break
+                        if page_num == 0 and content_y <= PAGE1_START_Y:
+                            k += 1
+                            continue
+                        elif page_num > 0 and content_y <= OTHER_PAGES_START_Y:
+                            k += 1
+                            continue
+                        if content_y >= FOOTER_Y_MIN:
+                            break
+                        content_text = ''.join([c['text'] for c in sorted(content_chars, key=lambda c: c['x0'])])
+                        if is_header_line(content_text):
+                            k += 1
+                            continue
+                        row = {}
+                        for field_name, coords in header_mapping.items():
+                            field_value = extract_text_by_coordinates(content_chars, coords['x0'], coords['x1'])
+                            row[field_name] = field_value if field_value else None
+                        if is_valid_data_row(row):
+                            k_next = k + 1
+                            while k_next < len(sorted_char_lines):
+                                next_y, next_chars = sorted_char_lines[k_next]
+                                if next_section_y and next_y >= next_section_y:
+                                    break
+                                if next_y >= FOOTER_Y_MIN:
+                                    break
+                                next_text = ''.join([c['text'] for c in sorted(next_chars, key=lambda c: c['x0'])])
+                                if is_header_line(next_text):
+                                    break
+                                next_row = {}
+                                for field_name, coords in header_mapping.items():
+                                    field_value = extract_text_by_coordinates(next_chars, coords['x0'], coords['x1'])
+                                    next_row[field_name] = field_value if field_value else None
+                                
+                                # Se a próxima linha tem CNPJ, Data Inicial E Container, é um novo registro
+                                has_cnpj = next_row.get('CNPJ / CPF (ID)') and len(next_row.get('CNPJ / CPF (ID)', '')) > 10
+                                has_data_inicial = next_row.get('Data Inicial (Start Time)') and '/' in next_row.get('Data Inicial (Start Time)', '')
+                                has_container = next_row.get('Container (Equipment ID)') and len(next_row.get('Container (Equipment ID)', '')) > 5
+                                
+                                if has_cnpj and has_data_inicial and has_container:
+                                    break
+                                # Concatenar Observações (Notes) e outros campos que podem ser multi-linha
+                                multi_line_fields = ['Observacoes (Notes)', 'Importador/Exportador (Consignee / Shipper)', 'Manifesto Carga BL / Booking']
+                                for field_name in multi_line_fields:
+                                    field_value_next = extract_text_by_coordinates(next_chars, header_mapping[field_name]['x0'], header_mapping[field_name]['x1'])
+                                    if field_value_next:
+                                        if row[field_name]:
+                                            row[field_name] += ' ' + field_value_next
+                                        else:
+                                            row[field_name] = field_value_next
+                                k_next += 1
+                            processed_row = {field_name: (value.strip() if isinstance(value, str) and value.strip() else None)
+                                           for field_name, value in row.items()}
+                            section_fields.append(processed_row)
+                            k = k_next
+                        else:
+                            k += 1
+                if section_fields:
+                    section_data = {
+                        "Quantidade (Quantity)": section_info['quantidade'],
+                        "Title": section_info['title'],
+                        "Total": section_info['total'],
+                        "fields": section_fields
+                    }
+                    sections_data.append(section_data)
     return sections_data
 
 def read_pdf_and_analyze(stream):
