@@ -6,7 +6,7 @@ API REST em Python para converter arquivos PDF em JSON com metadados e tabelas e
 ## Endpoints
 
 - `GET /` : verifica status da API  
-- `POST /convert` : envia um PDF (campo `file`) e recebe JSON  
+- `POST /analyze` : envia um PDF (campo `file`) e recebe JSON  
 
 ## Docker
 
@@ -21,7 +21,7 @@ A API estará disponível em `http://localhost:8085/`.
 
 Na raiz do projeto execute:
 
-- Build and Run: `docker-comppose up -d`
+- Build and Run: `docker-compose up -d`
 - Stop: `docker-compose down`
 
 A API estará disponível em `http://localhost:8085/`.
