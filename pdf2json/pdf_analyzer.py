@@ -688,11 +688,11 @@ def read_pdf_and_analyze(stream):
         sections_with_data = extract_data_with_header_mapping(stream)
         return {
             "header": header_info["header"],
-            "content": sections_with_data
+            "sections": sections_with_data
         }
     except Exception as e:
         return {
             "error": str(e),
             "header": {},
-            "content": []
+            "sections": []
         } 
