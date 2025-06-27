@@ -489,7 +489,7 @@ def extract_data_with_header_mapping(stream):
         'DT / DTA': {'x0': 392.0, 'x1': 439.0},
         'GMCI / GRCI': {'x0': 440.2, 'x1': 483.9},
         'Doc': {'x0': 491.0, 'x1': 532.0},
-        'Referência (Reference)': {'x0': 541.5, 'x1': 574.5},
+        'Referência (Reference)': {'x0': 540.5, 'x1': 575.5},
         'DIAS (Days)': {'x0': 579.9, 'x1': 598.3},
         'Observacoes (Notes)': {'x0': 600.0, 'x1': 750.0},
         'Moeda (Currency)': {'x0': 751.3, 'x1': 781.7},
