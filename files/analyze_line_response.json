@@ -1,0 +1,128 @@
+{
+    "armazenagem": {
+        "fields": [
+            {
+                "%_armaz": "0.086",
+                "carregado": "0",
+                "final": "20/06/2025",
+                "inicio": "06/06/2025",
+                "periodo": "1",
+                "qtde_pecas": "1",
+                "saldo": "1",
+                "total_armaz_rs": 235.4
+            },
+            {
+                "%_armaz": "0.032",
+                "carregado": "1",
+                "final": "24/06/2025",
+                "inicio": "21/06/2025",
+                "periodo": "2",
+                "qtde_pecas": "1",
+                "saldo": "0",
+                "total_armaz_rs": 186.11
+            }
+        ],
+        "total_armazenagem_periodos": 421.51
+    },
+    "beneficiario": {
+        "cnpj_cpf": "11771754000161",
+        "codigo": "001951",
+        "nome": "DANURI IMPORTACAO E EXPORTACAO LTDA"
+    },
+    "cliente": {
+        "bairro": "BARRA DO RIO",
+        "cep": "88305570",
+        "cidade": "ITAJAI",
+        "cnpj_cpf": "01701615000370",
+        "codigo": "000018",
+        "endereco": "RUA R ARNOLDO LOPES GONZAGA, 507 - SALA 5A",
+        "estado": "SC",
+        "ie": "256.048.738",
+        "nome": "EGA ASSESSORIA EM COMERCIO EXTERIOR LTDA"
+    },
+    "comissaria": {
+        "cnpj_cpf": "25158582000160",
+        "codigo": "001943",
+        "nome": "MS ASSESSORIA EM COMERCIO EXTERIOR LTDA"
+    },
+    "faturar para": {
+        "bairro": "BARRA DO RIO",
+        "cep": "88305570",
+        "cidade": "ITAJAI",
+        "cnpj_cpf": "01701615000370",
+        "codigo": "000018",
+        "endereco": "RUA R ARNOLDO LOPES GONZAGA, 507 - SALA 5A",
+        "estado": "SC",
+        "ie": "256.048.738",
+        "im": null,
+        "nome": "EGA ASSESSORIA EM COMERCIO EXTERIOR LTDA"
+    },
+    "header": {
+        "capa": "101139",
+        "demonstrativo": "105515",
+        "nota_fiscal": "000075260",
+        "opcao_tarifa": "249 - DANURI - Nº PROPOSTA: 286/2023",
+        "regime": "1 - COMUM IMPORTACAO",
+        "tarifa 01": "00260 - DANURI - Nº PROPOSTA: 690/2025"
+    },
+    "informacoes do lote": {
+        "bl_awb_ctrc": "NGBE25040433",
+        "data_entrada": "06/06/2025",
+        "dias": "19",
+        "doc_aduan_de_entrada": "DTC - 25/002529047 - NVT",
+        "doc_aduaneiro_i": "DI - 2025/013460803",
+        "doc_aduaneiro_ii": "",
+        "fim_periodo_armaz": "24/06/2025",
+        "lote": "202500005305",
+        "periodos_apuracao": "06/06/2025 a 24/06/2025",
+        "periodos_armaz": "2",
+        "prazo_p_retirada": "24/06/2025",
+        "qtd_container": "1",
+        "qtd_lote": "1.00",
+        "ref_cliente": "SAP1061,1066,1071,1088B,1092,1",
+        "valor_fob_cif_rs": 144941.68,
+        "valor_fob_cif_us": 26462.25
+    },
+    "observacoes": "",
+    "operacao_servicos": {
+        "fields": [
+            {
+                "descricao": "004 - MOVIMENTACAO( HANDLING IN/OUT)",
+                "qtd": "1.0000",
+                "rs_unitario": 192.6,
+                "total_oper_rs": 192.6
+            },
+            {
+                "descricao": "120 - RETIRADA E COLOCACAO DE LACRE",
+                "qtd": "1.0000",
+                "rs_unitario": 4.28,
+                "total_oper_rs": 4.28
+            },
+            {
+                "descricao": "124 - TAXA ADM. DE RECEBIMENTO/REGISTRO DTA - DTC",
+                "qtd": "1.0000",
+                "rs_unitario": 160.5,
+                "total_oper_rs": 160.5
+            },
+            {
+                "descricao": "126 - POSICIONAMENTO DE CONTAINER PARA VISTORIA - MAPA",
+                "qtd": "1.0000",
+                "rs_unitario": 125.19,
+                "total_oper_rs": 125.19
+            },
+            {
+                "descricao": "206 - ISS",
+                "qtd": "1.0000",
+                "rs_unitario": 27.96,
+                "total_oper_rs": 27.96
+            }
+        ],
+        "total_geral": 932.04,
+        "total_operacao_servicos": 510.53
+    },
+    "tarifas aplicadas": {
+        "cotacao": "18/06/2025",
+        "moeda": "DOLAR AMERICANO",
+        "valor_cotacao": "5.4773"
+    }
+}
