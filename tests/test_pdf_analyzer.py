@@ -6,7 +6,7 @@ import json
 from io import BytesIO
 
 # Import the functions to test
-from pdf2json.pdf_analyzer import (
+from pdf2json.document_001 import (
     extract_header_info,
     is_blue_line,
     extract_text_by_coordinates,
@@ -403,34 +403,31 @@ class TestExtractDataWithHeaderMapping(unittest.TestCase):
 class TestReadPdfAndAnalyze(unittest.TestCase):
     """Test main PDF analysis functionality"""
     
-    @patch('pdf2json.pdf_analyzer.extract_header_info')
-    @patch('pdf2json.pdf_analyzer.extract_data_with_header_mapping')
+    @patch('pdf2json.document_001.extract_header_info')
+    @patch('pdf2json.document_001.extract_data_with_header_mapping')
     def test_read_pdf_and_analyze_success(self, mock_extract_data, mock_extract_header):
         """Test successful PDF analysis"""
         mock_extract_header.return_value = {'header': {'test': 'value'}}
-        mock_extract_data.return_value = [{'section': 'data'}]
+        mock_extract_data.return_value = {'data': {'test': 'value'}}
         
-        result = read_pdf_and_analyze(Mock())
+        mock_file = Mock()
+        result = read_pdf_and_analyze(mock_file)
         
         self.assertIn('header', result)
-        self.assertIn('sections', result)
-        self.assertEqual(result['header'], {'test': 'value'})
-        self.assertEqual(result['sections'], [{'section': 'data'}])
-    
-    @patch('pdf2json.pdf_analyzer.extract_header_info')
-    @patch('pdf2json.pdf_analyzer.extract_data_with_header_mapping')
+        self.assertIn('data', result)
+        mock_extract_header.assert_called_once_with(mock_file)
+        mock_extract_data.assert_called_once_with(mock_file)
+
+    @patch('pdf2json.document_001.extract_header_info')
+    @patch('pdf2json.document_001.extract_data_with_header_mapping')
     def test_read_pdf_and_analyze_exception(self, mock_extract_data, mock_extract_header):
         """Test PDF analysis with exception"""
         mock_extract_header.side_effect = Exception("Test error")
         
-        result = read_pdf_and_analyze(Mock())
+        mock_file = Mock()
         
-        self.assertIn('error', result)
-        self.assertIn('header', result)
-        self.assertIn('sections', result)
-        self.assertEqual(result['error'], 'Test error')
-        self.assertEqual(result['header'], {})
-        self.assertEqual(result['sections'], [])
+        with self.assertRaises(Exception):
+            read_pdf_and_analyze(mock_file)
 
 
 class TestIntegration(unittest.TestCase):

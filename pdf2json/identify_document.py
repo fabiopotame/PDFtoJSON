@@ -1,6 +1,6 @@
 import pdfplumber
-from .pdf_analyzer import read_pdf_and_analyze
-from .pdf_line_parser import PDFLineParser
+from .document_001 import read_pdf_and_analyze
+from .document_002 import PDFLineParser
 
 def extract_document_title(pdf_path):
     try:
@@ -38,14 +38,14 @@ def analyze_document_by_type(pdf_path):
         }
     
     if title == "DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS":
-        # Usar pdf_analyzer.py (parser de coordenadas)
+        # Usar document_001.py (parser de coordenadas)
         with open(pdf_path, 'rb') as pdf_file:
             result = read_pdf_and_analyze(pdf_file)
         result["document_type"] = "DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS"
         return result
     
     elif "DEMONSTRATIVO DE CÁLCULO" in title:
-        # Usar pdf_line_parser.py (parser de linhas)
+        # Usar document_002.py (parser de linhas)
         parser = PDFLineParser()
         result = parser.parse_pdf(pdf_path)
         result["document_type"] = "DEMONSTRATIVO DE CÁLCULO"
