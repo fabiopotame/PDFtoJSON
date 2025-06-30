@@ -5,8 +5,38 @@ API REST em Python para converter arquivos PDF em JSON com metadados e tabelas e
 
 ## Endpoints
 
-- `GET /` : verifica status da API  
-- `POST /analyze` : envia um PDF (campo `file`) e recebe JSON  
+- `GET /health` : verifica status da API. Retorna `{ "status": "healthy", "message": "PDF to JSON API is running" }`
+- `POST /document` : envia um PDF (campo `file` em multipart/form-data) e recebe o JSON extraído automaticamente pelo parser correto, de acordo com o tipo do documento.
+
+### Exemplo de uso do endpoint /document
+
+**Requisição:**
+
+POST http://localhost:8085/document
+
+Form-data:
+- file: <seu_arquivo.pdf>
+
+**Resposta de sucesso:**
+```json
+{
+  "document_type": "DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS",
+  "header": { ... },
+  "sections": [ ... ]
+}
+```
+
+**Resposta de erro:**
+```json
+{
+  "error": "Document type not recognized",
+  "document_title": "OUTRO DOCUMENTO",
+  "supported_types": [
+    "DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS",
+    "DEMONSTRATIVO DE CÁLCULO"
+  ]
+}
+```
 
 ## Docker
 
