@@ -3,8 +3,10 @@ from flask_cors import CORS
 import os
 import tempfile
 from pdf2json.identify_document import analyze_document_by_type
+from config import HOST, PORT, MAX_CONTENT_LENGTH
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 CORS(app)
 
 @app.route('/health', methods=['GET'])
@@ -44,4 +46,4 @@ def analyze_document():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8085, debug=False)
+    app.run(host=HOST, port=PORT, debug=False)

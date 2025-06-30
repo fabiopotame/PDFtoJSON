@@ -401,28 +401,29 @@ class PDFLineParser:
 
     def parse_armazenagem_table(self, lines, start_line, result):
         """Parse da tabela de armazenagem"""
-        current_line = start_line + 2
+        if 'armazenagem' not in result:
+            result['armazenagem'] = {'fields': [], 'total_armazenagem_periodos': 0}
+        current_line = start_line + 1
         total_armazenagem = 0.0
-        
         while current_line < len(lines):
             line = lines[current_line]
-            
-            if 'Total de Armazenagem' in line or 'O P E R A Ç Ã O' in line:
+            if 'TOTAL ARMADOS' in line or 'TOTAL GERAL' in line or 'O P E R A Ç Ã O' in line:
+                # Extrai o total da linha se presente
+                match = re.search(r'(\d+[\.,]\d+)$', line)
+                if match:
+                    total_armazenagem = float(match.group(1).replace(',', '.'))
                 break
-            
             if line.strip() and not line.startswith('Período'):
                 parts = line.split()
                 if len(parts) >= 8:
                     try:
                         valor = float(parts[7].replace(',', '.'))
-                        total_armazenagem += valor
                     except:
                         valor = parts[7]
-                    
                     armazenagem_item = {
-                        'periodo': parts[0],
-                        'inicio': parts[1],
-                        'final': parts[2],
+                        'inicio': parts[0],
+                        'final': parts[1],
+                        'periodo': parts[2],
                         'qtde_pecas': parts[3],
                         'carregado': parts[4],
                         'saldo': parts[5],
@@ -430,46 +431,44 @@ class PDFLineParser:
                         'total_armaz_rs': valor
                     }
                     result['armazenagem']['fields'].append(armazenagem_item)
-            
             current_line += 1
-        
         result['armazenagem']['total_armazenagem_periodos'] = total_armazenagem
 
     def parse_operacao_table(self, lines, start_line, result):
         """Parse da tabela de operações/serviços"""
-        current_line = start_line + 2
+        if 'operacao_servicos' not in result:
+            result['operacao_servicos'] = {'fields': [], 'total_operacao_servicos': 0, 'total_geral': 0}
+        current_line = start_line + 1
         total_operacao = 0.0
-        
+        total_geral = None
         while current_line < len(lines):
             line = lines[current_line]
-            
-            if 'Total Operação' in line or 'Total Geral' in line or 'O B S E R V A Ç' in line:
-                break
-            
-            if line.strip() and not line.startswith('Descrição'):
-                match = re.match(r'(\d+)\s*-\s*(.+?)\s+(\d+\.?\d*)\s+([\d,]+)\s+([\d,]+)', line)
+            if 'TOTAL GERAL' in line or 'O B S E R V A Ç' in line:
+                match = re.search(r'(\d+[\.,]\d+)$', line)
                 if match:
-                    try:
-                        valor_unitario = float(match.group(4).replace(',', '.'))
-                        valor_total = float(match.group(5).replace(',', '.'))
-                        total_operacao += valor_total
-                    except:
-                        valor_unitario = match.group(4)
-                        valor_total = match.group(5)
-                    
+                    total_geral = float(match.group(1).replace(',', '.'))
+                break
+            if line.strip() and not line.startswith('Descrição'):
+                # Regex para capturar: código - descrição ... qtd rs_unitario total_oper_rs
+                match = re.match(r'^(\d+\s*-\s*.+?)\s+(\d+\.\d+)\s+([\d,.]+)\s+([\d,.]+)$', line)
+                if match:
+                    descricao = match.group(1).strip()
+                    qtd = match.group(2)
+                    rs_unitario = float(match.group(3).replace(',', '.'))
+                    total_oper_rs = float(match.group(4).replace(',', '.'))
                     operacao_item = {
-                        'descricao': f"{match.group(1)} - {match.group(2).strip()}",
-                        'qtd': match.group(3),
-                        'rs_unitario': valor_unitario,
-                        'total_oper_rs': valor_total
+                        'descricao': descricao,
+                        'qtd': qtd,
+                        'rs_unitario': rs_unitario,
+                        'total_oper_rs': total_oper_rs
                     }
                     result['operacao_servicos']['fields'].append(operacao_item)
-            
             current_line += 1
-        
-        result['operacao_servicos']['total_operacao_servicos'] = total_operacao
-        total_armazenagem = result['armazenagem']['total_armazenagem_periodos']
-        result['operacao_servicos']['total_geral'] = total_armazenagem + total_operacao
+        result['operacao_servicos']['total_operacao_servicos'] = sum([f['total_oper_rs'] for f in result['operacao_servicos']['fields']])
+        if total_geral is not None:
+            result['operacao_servicos']['total_geral'] = total_geral
+        else:
+            result['operacao_servicos']['total_geral'] = result.get('armazenagem', {}).get('total_armazenagem_periodos', 0) + result['operacao_servicos']['total_operacao_servicos']
 
     def clean_prefixes(self, data):
         """Remove prefixos indesejados dos campos"""

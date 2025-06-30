@@ -4,26 +4,25 @@ Este diretório contém todos os testes unitários para o parser de PDF para JSO
 
 ## Estrutura dos Testes
 
-### `test_pdf_analyzer.py`
-Testes abrangentes para todas as funções do módulo `pdf_analyzer.py`:
+### `test_document_001.py`
+Testes para o parser baseado em coordenadas (`document_001.py`):
+- Testes de extração de cabeçalho, seções, dados por coordenadas e integração.
 
-- **TestPDFAnalyzerConstants**: Testa constantes e configurações
-- **TestExtractHeaderInfo**: Testa extração de informações do cabeçalho
-- **TestIsBlueLine**: Testa detecção de linhas azuis
-- **TestExtractTextByCoordinates**: Testa extração de texto por coordenadas
-- **TestIsHeaderLine**: Testa detecção de linhas de cabeçalho
-- **TestIsValidDataRow**: Testa validação de linhas de dados
-- **TestIsNewRecord**: Testa detecção de novos registros
-- **TestExtractSectionData**: Testa extração de dados de seções
-- **TestExtractDataWithHeaderMapping**: Testa extração principal de dados
-- **TestReadPdfAndAnalyze**: Testa função principal de análise
-- **TestIntegration**: Testes de integração e consistência
+### `test_document_002.py`
+Testes para o parser baseado em linhas (`document_002.py`):
+- Testes de extração de campos por linha, tabelas, totais, integração e casos de borda.
+
+### `test_identify_document.py`
+Testes para roteamento e identificação automática do tipo de documento (`identify_document.py`):
+- Testes de extração do título do documento
+- Testes de roteamento para o parser correto
+- Testes de respostas de erro e casos de borda
 
 ## Como Executar os Testes
 
 ### Opção 1: Usando o script personalizado
 ```bash
-python run_tests.py
+./scripts/run_tests.sh
 ```
 
 ### Opção 2: Usando unittest diretamente
@@ -38,42 +37,22 @@ pytest tests/ -v
 
 ### Opção 4: Executar um teste específico
 ```bash
-python -m unittest tests.test_pdf_analyzer.TestIsBlueLine -v
+python -m unittest tests.test_document_002.TestPDFLineParser -v
 ```
 
 ## Cobertura dos Testes
 
 Os testes cobrem:
 
-### ✅ Funções Principais
-- `extract_header_info()` - Extração de cabeçalho
-- `is_blue_line()` - Detecção de linhas azuis
-- `extract_text_by_coordinates()` - Extração por coordenadas
-- `is_header_line()` - Detecção de cabeçalhos
-- `is_valid_data_row()` - Validação de dados
-- `is_new_record()` - Detecção de novos registros
-- `extract_section_data()` - Extração de seções
-- `extract_data_with_header_mapping()` - Extração principal
-- `read_pdf_and_analyze()` - Função principal
+### ✅ Parsers de Documento
+- `document_001.py` (coordenadas): extração de cabeçalho, seções, dados tabulares
+- `document_002.py` (linhas): extração de campos, tabelas, totais, validações
 
-### ✅ Constantes e Configurações
-- `HEADER_MAPPING` - Mapeamento de colunas
-- `MULTI_LINE_FIELDS` - Campos multi-linha
-- `VALID_SECTIONS` - Seções válidas
-- `BLUE_COLOR` - Cor das linhas azuis
-- Coordenadas de página
+### ✅ Roteamento e Identificação
+- `identify_document.py`: extração do título, roteamento automático, respostas de erro
 
-### ✅ Casos de Borda
-- PDFs vazios
-- Dados ausentes
-- Valores nulos
-- Coordenadas fora dos limites
-- Textos inválidos
-
-### ✅ Cenários de Erro
-- Exceções durante processamento
-- Dados malformados
-- Valores inesperados
+### ✅ Casos de Borda e Erro
+- PDFs vazios, dados ausentes, valores nulos, títulos desconhecidos, exceções
 
 ## Adicionando Novos Testes
 
@@ -121,7 +100,7 @@ class TestNewFunction(unittest.TestCase):
 
 ## Relatórios de Teste
 
-O script `run_tests.py` gera relatórios detalhados incluindo:
+O script `run_tests.sh` gera relatórios detalhados incluindo:
 - Número total de testes executados
 - Taxa de sucesso
 - Lista de falhas e erros
@@ -130,6 +109,6 @@ O script `run_tests.py` gera relatórios detalhados incluindo:
 ## Integração Contínua
 
 Os testes podem ser integrados em pipelines CI/CD:
-- Execute `python run_tests.py` no build
+- Execute `./scripts/run_tests.sh` no build
 - Use o código de saída para determinar sucesso/falha
 - Configure alertas para falhas de teste 

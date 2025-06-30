@@ -26,36 +26,46 @@ def analyze_document_by_type(pdf_path):
     """
     Identifica o tipo de documento e chama o parser apropriado
     """
-    title = extract_document_title(pdf_path)
-    
-    if title is None:
+    try:
+        title = extract_document_title(pdf_path)
+        
+        if title is None:
+            return {
+                "error": "Could not extract document title",
+                "supported_types": [
+                    "DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS",
+                    "DEMONSTRATIVO DE CÁLCULO"
+                ]
+            }
+        
+        if title == "DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS":
+            # Usar document_001.py (parser de coordenadas)
+            with open(pdf_path, 'rb') as pdf_file:
+                result = read_pdf_and_analyze(pdf_file)
+            result["document_type"] = "DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS"
+            return result
+        
+        elif "DEMONSTRATIVO DE CÁLCULO" in title:
+            # Usar document_002.py (parser de linhas)
+            parser = PDFLineParser()
+            result = parser.parse_pdf(pdf_path)
+            result["document_type"] = "DEMONSTRATIVO DE CÁLCULO"
+            return result
+        
+        else:
+            # Documento não reconhecido
+            return {
+                "error": "Document type not recognized",
+                "document_title": title,
+                "supported_types": [
+                    "DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS",
+                    "DEMONSTRATIVO DE CÁLCULO"
+                ]
+            }
+    except Exception as e:
         return {
             "error": "Could not extract document title",
-            "supported_types": [
-                "DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS",
-                "DEMONSTRATIVO DE CÁLCULO"
-            ]
-        }
-    
-    if title == "DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS":
-        # Usar document_001.py (parser de coordenadas)
-        with open(pdf_path, 'rb') as pdf_file:
-            result = read_pdf_and_analyze(pdf_file)
-        result["document_type"] = "DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS"
-        return result
-    
-    elif "DEMONSTRATIVO DE CÁLCULO" in title:
-        # Usar document_002.py (parser de linhas)
-        parser = PDFLineParser()
-        result = parser.parse_pdf(pdf_path)
-        result["document_type"] = "DEMONSTRATIVO DE CÁLCULO"
-        return result
-    
-    else:
-        # Documento não reconhecido
-        return {
-            "error": "Document type not recognized",
-            "document_title": title,
+            "exception": str(e),
             "supported_types": [
                 "DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS",
                 "DEMONSTRATIVO DE CÁLCULO"
