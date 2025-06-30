@@ -79,4 +79,4 @@ def analyze_line():
         return jsonify({"error": "Error processing PDF: {}".format(str(e))}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8086, debug=False)
+    app.run(host='0.0.0.0', port=8085, debug=False)

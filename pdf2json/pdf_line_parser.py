@@ -5,87 +5,60 @@ Parser Baseado em Linhas Fixas - Extrai campos diretamente pelas linhas do PDF
 """
 
 import re
-import json
+from datetime import datetime
 import pdfplumber
-from collections import defaultdict
 
 class PDFLineParser:
     def __init__(self):
-        # Mapeamento de campos por linha (baseado no PDF 55600-demo.pdf)
         self.field_mapping = {
-            # Header (linha 2)
             2: {
                 'header.capa': {'start': 'CAPA:', 'end': 'DEMONSTRATIVO:'},
                 'header.demonstrativo': {'start': 'DEMONSTRATIVO:', 'end': 'NOTA FISCAL:'},
                 'header.nota_fiscal': {'start': 'NOTA FISCAL:', 'end': None}
             },
-            # Regime (linha 3)
-            3: {
-                'header.regime': {'start': 'Regime:', 'end': None}
-            },
-            # Tarifa 01 (linha 4)
-            4: {
-                'header.tarifa 01': {'start': 'Tarifa 01:', 'end': None}
-            },
-            # Opção tarifa (linha 5)
-            5: {
-                'header.opcao_tarifa': {'start': 'Opção tarifa:', 'end': None}
-            },
-            # Beneficiário (linha 7)
+            3: {'header.regime': {'start': 'Regime:', 'end': None}},
+            4: {'header.tarifa 01': {'start': 'Tarifa 01:', 'end': None}},
+            5: {'header.opcao_tarifa': {'start': 'Opção tarifa:', 'end': None}},
             7: {
                 'beneficiario.codigo': {'start': 'Código:', 'end': 'Nome:'},
                 'beneficiario.nome': {'start': 'Nome:', 'end': 'CNPJ/CPF:'},
                 'beneficiario.cnpj_cpf': {'start': 'CNPJ/CPF:', 'end': None}
             },
-            # Comissária (linha 9)
             9: {
                 'comissaria.codigo': {'start': 'Código:', 'end': 'Nome:'},
                 'comissaria.nome': {'start': 'Nome:', 'end': 'CNPJ/CPF:'},
                 'comissaria.cnpj_cpf': {'start': 'CNPJ/CPF:', 'end': None}
             },
-            # Cliente (linha 11)
             11: {
                 'cliente.codigo': {'start': 'Código:', 'end': 'Nome:'},
                 'cliente.nome': {'start': 'Nome:', 'end': None}
             },
-            # Cliente endereço (linha 12)
-            12: {
-                'cliente.endereco': {'start': 'Endereço:', 'end': None}
-            },
-            # Cliente bairro, cidade, estado, cep (linha 13)
+            12: {'cliente.endereco': {'start': 'Endereço:', 'end': None}},
             13: {
                 'cliente.bairro': {'start': 'Bairro:', 'end': 'Cidade:'},
                 'cliente.cidade': {'start': 'Cidade:', 'end': 'Estado:'},
                 'cliente.estado': {'start': 'Estado:', 'end': 'CEP:'},
                 'cliente.cep': {'start': 'CEP:', 'end': None}
             },
-            # Cliente CNPJ/CPF, IE (linha 14)
             14: {
                 'cliente.cnpj_cpf': {'start': 'CNPJ/CPF:', 'end': 'IE:'},
                 'cliente.ie': {'start': 'IE:', 'end': None}
             },
-            # Faturar para (linha 16)
             16: {
                 'faturar para.codigo': {'start': 'Código:', 'end': 'Nome:'},
                 'faturar para.nome': {'start': 'Nome:', 'end': None}
             },
-            # Faturar para endereço (linha 17)
-            17: {
-                'faturar para.endereco': {'start': 'Endereço:', 'end': None}
-            },
-            # Faturar para bairro, cidade, estado, cep (linha 18)
+            17: {'faturar para.endereco': {'start': 'Endereço:', 'end': None}},
             18: {
                 'faturar para.bairro': {'start': 'Bairro:', 'end': 'Cidade:'},
                 'faturar para.cidade': {'start': 'Cidade:', 'end': 'Estado:'},
                 'faturar para.estado': {'start': 'Estado:', 'end': 'CEP:'},
                 'faturar para.cep': {'start': 'CEP:', 'end': None}
             },
-            # Faturar para CNPJ/CPF, IE (linha 19)
             19: {
                 'faturar para.cnpj_cpf': {'start': 'CNPJ/CPF:', 'end': 'IE:'},
                 'faturar para.ie': {'start': 'IE:', 'end': None}
             },
-            # Tarifas aplicadas (linha 21)
             21: {
                 'tarifas aplicadas.moeda': {'start': 'Moeda:', 'end': 'Data/Cotação:'},
                 'tarifas aplicadas.cotacao': {'start': 'Data/Cotação:', 'end': 'Valor:'},
@@ -100,10 +73,7 @@ class PDFLineParser:
             for page in pdf.pages:
                 text = page.extract_text()
                 if text:
-                    page_lines = text.split('\n')
-                    for line in page_lines:
-                        if line.strip():
-                            lines.append(line.strip())
+                    lines.extend([line.strip() for line in text.split('\n') if line.strip()])
         return lines
 
     def extract_field_value(self, line_text, field_config):
@@ -115,34 +85,196 @@ class PDFLineParser:
         end_marker = field_config['end']
         
         if start_marker is None:
-            # Se não há marcador de início, retorna a linha inteira
             return line_text.strip()
         
-        # Encontra o início do valor
         start_pos = line_text.find(start_marker)
         if start_pos == -1:
             return ""
         
-        # Remove o marcador de início
         value_start = start_pos + len(start_marker)
         
         if end_marker is None:
-            # Se não há marcador de fim, pega até o final da linha
-            value = line_text[value_start:].strip()
-        else:
-            # Encontra o fim do valor
-            end_pos = line_text.find(end_marker, value_start)
-            if end_pos == -1:
-                value = line_text[value_start:].strip()
-            else:
-                value = line_text[value_start:end_pos].strip()
+            return line_text[value_start:].strip()
         
-        return value
+        end_pos = line_text.find(end_marker, value_start)
+        if end_pos == -1:
+            return line_text[value_start:].strip()
+        
+        return line_text[value_start:end_pos].strip()
+
+    def _validate_ref_cliente(self, ref_value, lote_section):
+        """Valida se o ref_cliente não faz parte do doc_aduan_de_entrada"""
+        if ref_value.startswith('NVT '):
+            ref_value = ref_value[4:]
+        
+        if re.match(r'^\d{1,3}$', ref_value):
+            if 'doc_aduan_de_entrada' in lote_section:
+                doc_entrada = lote_section['doc_aduan_de_entrada']
+                if doc_entrada and doc_entrada.endswith(f" - {ref_value}"):
+                    return None
+        return ref_value
+
+    def _extract_ref_cliente(self, lines, ref_line, lote_section):
+        """Extrai dados do ref_cliente"""
+        if ref_line is None:
+            return None
+        
+        ref_text = lines[ref_line]
+        
+        if re.search(r'Ref\.Cliente:\s*$', ref_text):
+            # Busca na linha seguinte
+            if ref_line + 1 < len(lines):
+                next_line = lines[ref_line + 1]
+                if next_line:
+                    parts = next_line.split(' - ')
+                    if len(parts) > 1:
+                        return self._validate_ref_cliente(parts[-1].strip(), lote_section)
+                    else:
+                        # Fallback com regex
+                        ref_cliente_match = re.search(r'([A-Z0-9]+(?:[,\-][A-Z0-9]+)*)\s*$', next_line)
+                        if ref_cliente_match:
+                            return self._validate_ref_cliente(ref_cliente_match.group(1), lote_section)
+        else:
+            # Valor na mesma linha
+            ref_match = re.search(r'Ref\.Cliente:\s*([A-Z0-9\s,.-]+)', ref_text)
+            if ref_match:
+                ref_value = ref_match.group(1).strip()
+                return ref_value if ref_value else None
+        
+        return None
+
+    def _find_line_indices(self, lines):
+        """Encontra índices das linhas importantes"""
+        indices = {}
+        
+        for i, line in enumerate(lines):
+            if re.match(r'^\d{12}\s+\w+', line):
+                indices['lote'] = i
+            elif re.match(r'^DI\s+-\s+\d{4}/\d+', line):
+                indices['doc_aduaneiro'] = i
+            elif re.match(r'^\d+\.\d+,\d+\s+\d+\.\d+,\d+', line):
+                indices['valores'] = i
+            elif 'Ref.Cliente:' in line:
+                indices['ref'] = i
+        
+        return indices
+
+    def _extract_lote_data(self, lote_text, lote_section):
+        """Extrai dados da linha do lote"""
+        # Número do lote
+        lote_match = re.match(r'^(\d{12})', lote_text)
+        if lote_match:
+            lote_section['lote'] = lote_match.group(1)
+        
+        # BL/AWB/CTRC
+        parts = lote_text.split()
+        if len(parts) >= 2:
+            candidate = parts[1]
+            lote_section['bl_awb_ctrc'] = candidate if re.match(r'^[A-Z]{4,5}\d{8,10}$', candidate) else None
+        else:
+            lote_section['bl_awb_ctrc'] = None
+        
+        # Documento aduaneiro de entrada
+        doc_entrada_match = re.search(r'([A-Z]{3}\s*-\s*\d{2}/\d+)\s*-\s*([A-Z0-9]+)', lote_text)
+        if doc_entrada_match:
+            lote_section['doc_aduan_de_entrada'] = f"{doc_entrada_match.group(1)} - {doc_entrada_match.group(2)}"
+
+    def _extract_doc_aduaneiro_data(self, doc_text, lote_section):
+        """Extrai dados do documento aduaneiro"""
+        # Documento aduaneiro
+        doc_match = re.search(r'DI\s+-\s+(\d{4}/\d+)', doc_text)
+        if doc_match:
+            lote_section['doc_aduaneiro_i'] = f"DI - {doc_match.group(1)}"
+        
+        # Data de entrada e quantidade de container
+        data_match = re.search(r'(\d{2}/\d{2}/\d{4})\s+(\d+)', doc_text)
+        if data_match:
+            lote_section['data_entrada'] = data_match.group(1)
+            lote_section['qtd_container'] = data_match.group(2)
+
+    def _extract_valores_data(self, valores_text, lote_section):
+        """Extrai dados da linha de valores"""
+        # Valores FOB/CIF
+        valores_match = re.search(r'(\d+\.\d+,\d+)\s+(\d+\.\d+,\d+)', valores_text)
+        if valores_match:
+            lote_section['valor_fob_cif_rs'] = float(valores_match.group(1).replace('.', '').replace(',', '.'))
+            lote_section['valor_fob_cif_us'] = float(valores_match.group(2).replace('.', '').replace(',', '.'))
+        
+        # Quantidade do lote
+        qtd_match = re.search(r'(\d+\.\d+,\d+)\s+(\d+\.\d+,\d+)\s+(\d+\.\d{2})', valores_text)
+        if qtd_match:
+            lote_section['qtd_lote'] = qtd_match.group(3)
+        
+        # Datas de período
+        datas_match = re.search(r'(\d{2}/\d{2}/\d{4})\s+a\s+(\d{2}/\d{2}/\d{4})', valores_text)
+        if datas_match:
+            lote_section['periodos_apuracao'] = f"{datas_match.group(1)} a {datas_match.group(2)}"
+            lote_section['fim_periodo_armaz'] = datas_match.group(2)
+            lote_section['prazo_p_retirada'] = datas_match.group(2)
+
+    def _search_additional_data(self, lines, valores_line, lote_section):
+        """Busca dados adicionais nas próximas linhas e no documento"""
+        # Busca nas próximas 5 linhas
+        for offset in range(1, 6):
+            idx = valores_line + offset
+            if idx >= len(lines):
+                break
+            
+            line = lines[idx]
+            
+            # Datas de período
+            datas_match = re.search(r'(\d{2}/\d{2}/\d{4})\s+a\s+(\d{2}/\d{2}/\d{4})', line)
+            if datas_match:
+                lote_section['periodos_apuracao'] = f"{datas_match.group(1)} a {datas_match.group(2)}"
+                lote_section['fim_periodo_armaz'] = datas_match.group(2)
+                lote_section['prazo_p_retirada'] = datas_match.group(2)
+            
+            # Dias
+            dias_match = re.search(r'Dias:\s*(\d+)', line)
+            if dias_match:
+                lote_section['dias'] = dias_match.group(1)
+            
+            # Períodos de armazenagem
+            periodos_match = re.search(r'Perío[^:]*:\s*(\d+)', line)
+            if periodos_match:
+                lote_section['periodos_armaz'] = periodos_match.group(1)
+        
+        # Busca ampliada se não encontrou
+        if 'dias' not in lote_section:
+            for line in lines:
+                if 'Dias:' in line:
+                    dias_match = re.search(r'Dias:\s*(\d+)', line)
+                    if dias_match:
+                        lote_section['dias'] = dias_match.group(1)
+                        break
+        
+        if 'periodos_armaz' not in lote_section:
+            for line in lines:
+                if 'Perío' in line and ':' in line:
+                    periodos_match = re.search(r'Perío[^:]*:\s*(\d+)', line)
+                    if periodos_match:
+                        lote_section['periodos_armaz'] = periodos_match.group(1)
+                        break
+
+    def _calculate_dias(self, lote_section):
+        """Calcula dias baseado nas datas de período"""
+        if 'periodos_apuracao' in lote_section:
+            try:
+                datas_text = lote_section['periodos_apuracao']
+                datas_match = re.search(r'(\d{2}/\d{2}/\d{4})\s+a\s+(\d{2}/\d{2}/\d{4})', datas_text)
+                if datas_match:
+                    data_inicio = datetime.strptime(datas_match.group(1), '%d/%m/%Y')
+                    data_fim = datetime.strptime(datas_match.group(2), '%d/%m/%Y')
+                    dias = (data_fim - data_inicio).days + 1
+                    lote_section['dias'] = str(dias)
+            except Exception:
+                lote_section['dias'] = None
 
     def parse_pdf(self, pdf_path):
-        """Parse do PDF usando mapeamento de linhas fixas"""
+        """Parse principal do PDF"""
         lines = self.extract_text_by_lines(pdf_path)
         
+        # Inicializa resultado
         result = {
             'header': {},
             'beneficiario': {},
@@ -156,6 +288,7 @@ class PDFLineParser:
             'informacoes do lote': {}
         }
         
+        # Processa campos mapeados
         for line_num, field_configs in self.field_mapping.items():
             if line_num <= len(lines):
                 line_text = lines[line_num - 1]
@@ -165,183 +298,37 @@ class PDFLineParser:
                     if value:
                         self.set_nested_value(result, field_name, value)
         
+        # Processa tabelas dinâmicas
         self.parse_dynamic_tables(lines, result)
         
+        # Processa seção do lote
         lote_section = {}
+        line_indices = self._find_line_indices(lines)
         
-        lote_line = None
-        doc_aduaneiro_line = None
-        valores_line = None
-        ref_line = None
+        # Extrai dados do lote
+        if line_indices.get('lote') is not None:
+            self._extract_lote_data(lines[line_indices['lote']], lote_section)
         
-        for i, line in enumerate(lines):
-            if re.match(r'^\d{12}\s+\w+', line):
-                lote_line = i
-            elif re.match(r'^DI\s+-\s+\d{4}/\d+', line):
-                doc_aduaneiro_line = i
-            elif re.match(r'^\d+\.\d+,\d+\s+\d+\.\d+,\d+', line):
-                valores_line = i
-            elif 'Ref.Cliente:' in line:
-                ref_line = i
+        # Extrai documento aduaneiro
+        if line_indices.get('doc_aduaneiro') is not None:
+            self._extract_doc_aduaneiro_data(lines[line_indices['doc_aduaneiro']], lote_section)
         
-        if lote_line is not None and lote_line < len(lines):
-            lote_text = lines[lote_line]
-            
-            lote_match = re.match(r'^(\d{12})', lote_text)
-            if lote_match:
-                lote_section['lote'] = lote_match.group(1)
-            
-            parts = lote_text.split()
-            if len(parts) >= 2:
-                candidate = parts[1]
-                if re.match(r'^[A-Z]{4,5}\d{8,10}$', candidate):
-                    lote_section['bl_awb_ctrc'] = candidate
-                else:
-                    lote_section['bl_awb_ctrc'] = None
-            else:
-                lote_section['bl_awb_ctrc'] = None
-            
-            doc_entrada_match = re.search(r'([A-Z]{3}\s*-\s*\d{2}/\d+)\s*-\s*([A-Z0-9]+)', lote_text)
-            if doc_entrada_match:
-                lote_section['doc_aduan_de_entrada'] = f"{doc_entrada_match.group(1)} - {doc_entrada_match.group(2)}"
+        # Extrai ref_cliente
+        lote_section['ref_cliente'] = self._extract_ref_cliente(lines, line_indices.get('ref'), lote_section)
         
-        if doc_aduaneiro_line is not None and doc_aduaneiro_line < len(lines):
-            doc_text = lines[doc_aduaneiro_line]
-            doc_match = re.search(r'DI\s+-\s+(\d{4}/\d+)', doc_text)
-            if doc_match:
-                lote_section['doc_aduaneiro_i'] = f"DI - {doc_match.group(1)}"
-            
-            data_match = re.search(r'(\d{2}/\d{2}/\d{4})\s+(\d+)', doc_text)
-            if data_match:
-                lote_section['data_entrada'] = data_match.group(1)
-                lote_section['qtd_container'] = data_match.group(2)
+        # Extrai valores
+        if line_indices.get('valores') is not None:
+            self._extract_valores_data(lines[line_indices['valores']], lote_section)
+            self._search_additional_data(lines, line_indices['valores'], lote_section)
         
-        if ref_line is not None and ref_line < len(lines):
-            ref_text = lines[ref_line]
-            if re.search(r'Ref\.Cliente:\s*$', ref_text):
-                if ref_line + 1 < len(lines):
-                    next_line = lines[ref_line + 1]
-                    if next_line:
-                        parts = next_line.split(' - ')
-                        if len(parts) > 1:
-                            ref_value = parts[-1].strip()
-                            if ref_value.startswith('NVT '):
-                                ref_value = ref_value[4:]
-                            
-                            if re.match(r'^\d{1,3}$', ref_value):
-                                if 'doc_aduan_de_entrada' in lote_section:
-                                    doc_entrada = lote_section['doc_aduan_de_entrada']
-                                    if doc_entrada and doc_entrada.endswith(f" - {ref_value}"):
-                                        lote_section['ref_cliente'] = None
-                                    else:
-                                        lote_section['ref_cliente'] = ref_value
-                                else:
-                                    lote_section['ref_cliente'] = ref_value
-                            else:
-                                lote_section['ref_cliente'] = ref_value
-                        else:
-                            ref_cliente_match = re.search(r'([A-Z0-9]+(?:[,\-][A-Z0-9]+)*)\s*$', next_line)
-                            if ref_cliente_match:
-                                ref_value = ref_cliente_match.group(1)
-                                if re.match(r'^\d{1,3}$', ref_value):
-                                    if 'doc_aduan_de_entrada' in lote_section:
-                                        doc_entrada = lote_section['doc_aduan_de_entrada']
-                                        if doc_entrada and doc_entrada.endswith(f" - {ref_value}"):
-                                            lote_section['ref_cliente'] = None
-                                        else:
-                                            lote_section['ref_cliente'] = ref_value
-                                    else:
-                                        lote_section['ref_cliente'] = ref_value
-                                else:
-                                    lote_section['ref_cliente'] = ref_value
-                            else:
-                                lote_section['ref_cliente'] = None
-                    else:
-                        lote_section['ref_cliente'] = None
-            else:
-                ref_match = re.search(r'Ref\.Cliente:\s*([A-Z0-9\s,.-]+)', ref_text)
-                if ref_match:
-                    ref_value = ref_match.group(1).strip()
-                    if ref_value:
-                        lote_section['ref_cliente'] = ref_value
-                    else:
-                        lote_section['ref_cliente'] = None
-                else:
-                    lote_section['ref_cliente'] = None
-        else:
-            lote_section['ref_cliente'] = None
+        # Calcula campos derivados
+        self._calculate_dias(lote_section)
         
-        if valores_line is not None and valores_line < len(lines):
-            valores_text = lines[valores_line]
-            valores_match = re.search(r'(\d+\.\d+,\d+)\s+(\d+\.\d+,\d+)', valores_text)
-            if valores_match:
-                lote_section['valor_fob_cif_rs'] = float(valores_match.group(1).replace('.', '').replace(',', '.'))
-                lote_section['valor_fob_cif_us'] = float(valores_match.group(2).replace('.', '').replace(',', '.'))
-            
-            qtd_match = re.search(r'(\d+\.\d+,\d+)\s+(\d+\.\d+,\d+)\s+(\d+\.\d{2})', valores_text)
-            if qtd_match:
-                lote_section['qtd_lote'] = qtd_match.group(3)
-            
-            datas_match = re.search(r'(\d{2}/\d{2}/\d{4})\s+a\s+(\d{2}/\d{2}/\d{4})', valores_text)
-            if datas_match:
-                lote_section['periodos_apuracao'] = f"{datas_match.group(1)} a {datas_match.group(2)}"
-                lote_section['fim_periodo_armaz'] = datas_match.group(2)
-                lote_section['prazo_p_retirada'] = datas_match.group(2)
-        
-        if valores_line is not None:
-            for offset in range(1, 6):
-                idx = valores_line + offset
-                if idx < len(lines):
-                    line = lines[idx]
-                    datas_match = re.search(r'(\d{2}/\d{2}/\d{4})\s+a\s+(\d{2}/\d{2}/\d{4})', line)
-                    if datas_match:
-                        lote_section['periodos_apuracao'] = f"{datas_match.group(1)} a {datas_match.group(2)}"
-                        lote_section['fim_periodo_armaz'] = datas_match.group(2)
-                        lote_section['prazo_p_retirada'] = datas_match.group(2)
-                    dias_match = re.search(r'Dias:\s*(\d+)', line)
-                    if dias_match:
-                        lote_section['dias'] = dias_match.group(1)
-                    periodos_match = re.search(r'Perío[^:]*:\s*(\d+)', line)
-                    if periodos_match:
-                        lote_section['periodos_armaz'] = periodos_match.group(1)
-        
-        if 'dias' not in lote_section:
-            for i, line in enumerate(lines):
-                if 'Dias:' in line:
-                    dias_match = re.search(r'Dias:\s*(\d+)', line)
-                    if dias_match:
-                        lote_section['dias'] = dias_match.group(1)
-                        break
-        if 'periodos_armaz' not in lote_section:
-            for i, line in enumerate(lines):
-                if 'Perío' in line and ':' in line:
-                    periodos_match = re.search(r'Perío[^:]*:\s*(\d+)', line)
-                    if periodos_match:
-                        lote_section['periodos_armaz'] = periodos_match.group(1)
-                        break
-        
+        # Define valores padrão
         lote_section.setdefault('doc_aduaneiro_ii', '')
         lote_section.setdefault('bl_awb_ctrc', None)
         
-        if 'faturar para' in result:
-            result['faturar para']['im'] = None
-        
-        if 'observacoes' not in result:
-            result['observacoes'] = ''
-        
-        if 'periodos_apuracao' in lote_section:
-            try:
-                from datetime import datetime
-                datas_text = lote_section['periodos_apuracao']
-                datas_match = re.search(r'(\d{2}/\d{2}/\d{4})\s+a\s+(\d{2}/\d{2}/\d{4})', datas_text)
-                if datas_match:
-                    data_inicio = datetime.strptime(datas_match.group(1), '%d/%m/%Y')
-                    data_fim = datetime.strptime(datas_match.group(2), '%d/%m/%Y')
-                    dias = (data_fim - data_inicio).days + 1
-                    lote_section['dias'] = str(dias)
-            except Exception as e:
-                lote_section['dias'] = None
-        
+        # Define períodos de armazenagem baseado na tabela
         if 'armazenagem' in result and 'fields' in result['armazenagem']:
             periodos = len(result['armazenagem']['fields'])
             lote_section['periodos_armaz'] = str(periodos)
@@ -350,25 +337,38 @@ class PDFLineParser:
         
         result['informacoes do lote'] = lote_section
         
+        # Finaliza resultado
         self.clean_prefixes(result)
+        self._normalize_fields(result)
+        self._round_totals(result)
         
+        # Adiciona campos padrão
+        if 'faturar para' in result:
+            result['faturar para']['im'] = None
+        
+        return result
+
+    def _normalize_fields(self, result):
+        """Normaliza campos específicos"""
+        # Normaliza descrições de operações
         if 'operacao_servicos' in result and 'fields' in result['operacao_servicos']:
             for field in result['operacao_servicos']['fields']:
                 if 'descricao' in field:
                     field['descricao'] = self.normalize_string(field['descricao'])
         
+        # Normaliza porcentagens de armazenagem
         if 'armazenagem' in result and 'fields' in result['armazenagem']:
             for field in result['armazenagem']['fields']:
                 if '%_armaz' in field:
                     field['%_armaz'] = self.normalize_number(field['%_armaz'])
-        
+
+    def _round_totals(self, result):
+        """Arredonda totais das operações"""
         if 'operacao_servicos' in result:
             if 'total_geral' in result['operacao_servicos']:
                 result['operacao_servicos']['total_geral'] = self.round_decimal(result['operacao_servicos']['total_geral'])
             if 'total_operacao_servicos' in result['operacao_servicos']:
                 result['operacao_servicos']['total_operacao_servicos'] = self.round_decimal(result['operacao_servicos']['total_operacao_servicos'])
-        
-        return result
 
     def set_nested_value(self, data, field_path, value):
         """Define valor em estrutura aninhada usando dot notation"""
@@ -439,7 +439,6 @@ class PDFLineParser:
         """Parse da tabela de operações/serviços"""
         current_line = start_line + 2
         total_operacao = 0.0
-        total_geral = 0.0
         
         while current_line < len(lines):
             line = lines[current_line]
@@ -454,7 +453,6 @@ class PDFLineParser:
                         valor_unitario = float(match.group(4).replace(',', '.'))
                         valor_total = float(match.group(5).replace(',', '.'))
                         total_operacao += valor_total
-                        total_geral += valor_total
                     except:
                         valor_unitario = match.group(4)
                         valor_total = match.group(5)
@@ -477,10 +475,11 @@ class PDFLineParser:
         """Remove prefixos indesejados dos campos"""
         if isinstance(data, dict):
             for key, value in data.items():
-                if isinstance(value, str) and value.startswith(':'):
-                    data[key] = value[1:]
-                elif isinstance(value, str) and value.endswith(' IM:'):
-                    data[key] = value[:-4]
+                if isinstance(value, str):
+                    if value.startswith(':'):
+                        data[key] = value[1:]
+                    elif value.endswith(' IM:'):
+                        data[key] = value[:-4]
                 elif isinstance(value, (dict, list)):
                     self.clean_prefixes(value)
         elif isinstance(data, list):
@@ -488,7 +487,7 @@ class PDFLineParser:
                 self.clean_prefixes(item)
 
     def normalize_string(self, text):
-        """Normaliza string removendo espaços extras e normalizando caracteres"""
+        """Normaliza string removendo espaços extras"""
         if text is None:
             return ''
         normalized = re.sub(r'\s+', ' ', text.strip())
@@ -503,11 +502,10 @@ class PDFLineParser:
                 value = value.replace('.', '').replace(',', '.')
             elif ',' in value and '.' not in value:
                 value = value.replace(',', '.')
-            return value
         return value
 
     def round_decimal(self, value, places=2):
-        """Arredonda valores decimais para evitar problemas de precisão"""
+        """Arredonda valores decimais"""
         if isinstance(value, (int, float)):
             return round(value, places)
         return value
