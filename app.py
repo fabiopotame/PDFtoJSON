@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 import os
 import tempfile
@@ -8,6 +8,14 @@ from config import HOST, PORT, MAX_CONTENT_LENGTH
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 CORS(app)
+
+@app.route('/')
+def index():
+    return send_file('static/index.html')
+
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return send_from_directory('static', filename)
 
 @app.route('/health', methods=['GET'])
 def health_check():
