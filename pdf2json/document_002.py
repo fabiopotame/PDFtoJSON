@@ -10,158 +10,156 @@ import pdfplumber
 
 class PDFLineParser:
     def __init__(self):
+        # Field mapping configuration for line-based extraction
         self.field_mapping = {
-            2: {
-                'header.capa': {'start': 'CAPA:', 'end': 'DEMONSTRATIVO:'},
-                'header.demonstrativo': {'start': 'DEMONSTRATIVO:', 'end': 'NOTA FISCAL:'},
-                'header.nota_fiscal': {'start': 'NOTA FISCAL:', 'end': None}
+            1: {
+                'document_type': {'start': 'DEMONSTRATIVO DE CÁLCULO', 'end': None}
             },
-            3: {'header.regime': {'start': 'Regime:', 'end': None}},
-            4: {'header.tarifa 01': {'start': 'Tarifa 01:', 'end': None}},
-            5: {'header.opcao_tarifa': {'start': 'Opção tarifa:', 'end': None}},
+            2: {
+                'capa': {'start': 'CAPA:', 'end': 'DEMONSTRATIVO:'},
+                'demonstrativo': {'start': 'DEMONSTRATIVO:', 'end': 'NOTA FISCAL:'},
+                'nota_fiscal': {'start': 'NOTA FISCAL:', 'end': None}
+            },
+            3: {
+                'regime': {'start': 'Regime:', 'end': None}
+            },
+            4: {
+                'tarifa_01': {'start': 'Tarifa 01:', 'end': 'Opção tarifa:'},
+                'opcao_tarifa': {'start': 'Opção tarifa:', 'end': None}
+            },
             7: {
-                'beneficiario.codigo': {'start': 'Código:', 'end': 'Nome:'},
-                'beneficiario.nome': {'start': 'Nome:', 'end': 'CNPJ/CPF:'},
-                'beneficiario.cnpj_cpf': {'start': 'CNPJ/CPF:', 'end': None}
+                'codigo_beneficiario': {'start': 'Código:', 'end': 'Nome:'},
+                'nome_beneficiario': {'start': 'Nome:', 'end': 'CNPJ/CPF:'},
+                'cnpj_beneficiario': {'start': 'CNPJ/CPF:', 'end': None}
             },
             9: {
-                'comissaria.codigo': {'start': 'Código:', 'end': 'Nome:'},
-                'comissaria.nome': {'start': 'Nome:', 'end': 'CNPJ/CPF:'},
-                'comissaria.cnpj_cpf': {'start': 'CNPJ/CPF:', 'end': None}
+                'codigo_comissaria': {'start': 'Código:', 'end': 'Nome:'},
+                'nome_comissaria': {'start': 'Nome:', 'end': 'CNPJ/CPF:'},
+                'cnpj_comissaria': {'start': 'CNPJ/CPF:', 'end': None}
             },
             11: {
-                'cliente.codigo': {'start': 'Código:', 'end': 'Nome:'},
-                'cliente.nome': {'start': 'Nome:', 'end': None}
-            },
-            12: {'cliente.endereco': {'start': 'Endereço:', 'end': None}},
-            13: {
-                'cliente.bairro': {'start': 'Bairro:', 'end': 'Cidade:'},
-                'cliente.cidade': {'start': 'Cidade:', 'end': 'Estado:'},
-                'cliente.estado': {'start': 'Estado:', 'end': 'CEP:'},
-                'cliente.cep': {'start': 'CEP:', 'end': None}
-            },
-            14: {
-                'cliente.cnpj_cpf': {'start': 'CNPJ/CPF:', 'end': 'IE:'},
-                'cliente.ie': {'start': 'IE:', 'end': None}
+                'codigo_cliente': {'start': 'Código:', 'end': 'Nome:'},
+                'nome_cliente': {'start': 'Nome:', 'end': 'Endereço:'},
+                'endereco_cliente': {'start': 'Endereço:', 'end': 'Bairro:'},
+                'bairro_cliente': {'start': 'Bairro:', 'end': 'Cidade:'},
+                'cidade_cliente': {'start': 'Cidade:', 'end': 'Estado:'},
+                'estado_cliente': {'start': 'Estado:', 'end': 'CEP:'},
+                'cep_cliente': {'start': 'CEP:', 'end': 'CNPJ/CPF:'},
+                'cnpj_cliente': {'start': 'CNPJ/CPF:', 'end': 'IE:'},
+                'ie_cliente': {'start': 'IE:', 'end': None}
             },
             16: {
-                'faturar para.codigo': {'start': 'Código:', 'end': 'Nome:'},
-                'faturar para.nome': {'start': 'Nome:', 'end': None}
-            },
-            17: {'faturar para.endereco': {'start': 'Endereço:', 'end': None}},
-            18: {
-                'faturar para.bairro': {'start': 'Bairro:', 'end': 'Cidade:'},
-                'faturar para.cidade': {'start': 'Cidade:', 'end': 'Estado:'},
-                'faturar para.estado': {'start': 'Estado:', 'end': 'CEP:'},
-                'faturar para.cep': {'start': 'CEP:', 'end': None}
-            },
-            19: {
-                'faturar para.cnpj_cpf': {'start': 'CNPJ/CPF:', 'end': 'IE:'},
-                'faturar para.ie': {'start': 'IE:', 'end': None}
+                'codigo_faturar': {'start': 'Código:', 'end': 'Nome:'},
+                'nome_faturar': {'start': 'Nome:', 'end': 'Endereço:'},
+                'endereco_faturar': {'start': 'Endereço:', 'end': 'Bairro:'},
+                'bairro_faturar': {'start': 'Bairro:', 'end': 'Cidade:'},
+                'cidade_faturar': {'start': 'Cidade:', 'end': 'Estado:'},
+                'estado_faturar': {'start': 'Estado:', 'end': 'CEP:'},
+                'cep_faturar': {'start': 'CEP:', 'end': 'CNPJ/CPF:'},
+                'cnpj_faturar': {'start': 'CNPJ/CPF:', 'end': 'IE:'},
+                'ie_faturar': {'start': 'IE:', 'end': None}
             },
             21: {
-                'tarifas aplicadas.moeda': {'start': 'Moeda:', 'end': 'Data/Cotação:'},
-                'tarifas aplicadas.cotacao': {'start': 'Data/Cotação:', 'end': 'Valor:'},
-                'tarifas aplicadas.valor_cotacao': {'start': 'Valor:', 'end': None}
+                'moeda': {'start': 'Moeda:', 'end': 'Data/Cotação:'},
+                'data_cotacao': {'start': 'Data/Cotação:', 'end': 'Valor:'},
+                'valor_cotacao': {'start': 'Valor:', 'end': None}
             }
         }
 
     def extract_text_by_lines(self, pdf_path):
-        """Extrai texto do PDF linha a linha"""
-        lines = []
-        with pdfplumber.open(pdf_path) as pdf:
-            for page in pdf.pages:
-                text = page.extract_text()
-                if text:
-                    lines.extend([line.strip() for line in text.split('\n') if line.strip()])
-        return lines
+        """Extract text from PDF and return as list of lines"""
+        try:
+            with pdfplumber.open(pdf_path) as pdf:
+                all_text = ""
+                for page in pdf.pages:
+                    text = page.extract_text()
+                    if text:
+                        all_text += text + "\n"
+                
+                lines = [line.strip() for line in all_text.split('\n') if line.strip()]
+                return lines
+        except Exception as e:
+            print(f"Error extracting text from PDF: {e}")
+            return []
 
     def extract_field_value(self, line_text, field_config):
-        """Extrai valor de um campo específico da linha"""
-        if not line_text:
-            return ""
+        """Extract field value from line based on configuration"""
+        start_marker = field_config.get('start')
+        end_marker = field_config.get('end')
         
-        start_marker = field_config['start']
-        end_marker = field_config['end']
-        
-        if start_marker is None:
-            return line_text.strip()
+        if not start_marker:
+            return ''
         
         start_pos = line_text.find(start_marker)
         if start_pos == -1:
-            return ""
+            return ''
         
-        value_start = start_pos + len(start_marker)
+        start_pos += len(start_marker)
         
-        if end_marker is None:
-            return line_text[value_start:].strip()
-        
-        end_pos = line_text.find(end_marker, value_start)
-        if end_pos == -1:
-            return line_text[value_start:].strip()
-        
-        return line_text[value_start:end_pos].strip()
+        if end_marker:
+            end_pos = line_text.find(end_marker, start_pos)
+            if end_pos == -1:
+                return line_text[start_pos:].strip()
+            return line_text[start_pos:end_pos].strip()
+        else:
+            return line_text[start_pos:].strip()
 
     def _validate_ref_cliente(self, ref_value, lote_section):
-        """Valida se o ref_cliente não faz parte do doc_aduan_de_entrada"""
+        """Validate and clean ref_cliente value"""
+        if not ref_value:
+            return None
+        
+        # Remove NVT prefix if present
         if ref_value.startswith('NVT '):
             ref_value = ref_value[4:]
         
-        if re.match(r'^\d{1,3}$', ref_value):
-            if 'doc_aduan_de_entrada' in lote_section:
-                doc_entrada = lote_section['doc_aduan_de_entrada']
-                if doc_entrada and doc_entrada.endswith(f" - {ref_value}"):
-                    return None
+        # Check if it's part of doc_aduan_de_entrada
+        if 'doc_aduan_de_entrada' in lote_section:
+            if ref_value in lote_section['doc_aduan_de_entrada']:
+                return None
+        
         return ref_value
 
     def _extract_ref_cliente(self, lines, ref_line, lote_section):
-        """Extrai dados do ref_cliente"""
+        """Extract ref_cliente from lines"""
         if ref_line is None:
             return None
         
         ref_text = lines[ref_line]
+        ref_match = re.search(r'Ref\.Cliente:\s*([A-Z0-9]+)', ref_text)
         
-        if re.search(r'Ref\.Cliente:\s*$', ref_text):
-            # Busca na linha seguinte
-            if ref_line + 1 < len(lines):
-                next_line = lines[ref_line + 1]
-                if next_line:
-                    parts = next_line.split(' - ')
-                    if len(parts) > 1:
-                        return self._validate_ref_cliente(parts[-1].strip(), lote_section)
-                    else:
-                        # Fallback com regex
-                        ref_cliente_match = re.search(r'([A-Z0-9]+(?:[,\-][A-Z0-9]+)*)\s*$', next_line)
-                        if ref_cliente_match:
-                            return self._validate_ref_cliente(ref_cliente_match.group(1), lote_section)
-        else:
-            # Valor na mesma linha
-            ref_match = re.search(r'Ref\.Cliente:\s*([A-Z0-9\s,.-]+)', ref_text)
-            if ref_match:
-                ref_value = ref_match.group(1).strip()
-                return ref_value if ref_value else None
+        if ref_match:
+            ref_value = ref_match.group(1)
+            return self._validate_ref_cliente(ref_value, lote_section)
         
         return None
 
     def _find_line_indices(self, lines):
-        """Encontra índices das linhas importantes"""
+        """Find important line indices in the document"""
         indices = {}
         
         for i, line in enumerate(lines):
-            if re.match(r'^\d{12}\s+\w+', line):
+            # Lot line pattern
+            if re.match(r'^\d{12}\s+[A-Z]{4,5}\d{8,10}', line):
                 indices['lote'] = i
+            
+            # Customs document line pattern
             elif re.match(r'^DI\s+-\s+\d{4}/\d+', line):
                 indices['doc_aduaneiro'] = i
+            
+            # Values line pattern
             elif re.match(r'^\d+\.\d+,\d+\s+\d+\.\d+,\d+', line):
                 indices['valores'] = i
+            
+            # Reference line pattern
             elif 'Ref.Cliente:' in line:
                 indices['ref'] = i
         
         return indices
 
     def _extract_lote_data(self, lote_text, lote_section):
-        """Extrai dados da linha do lote"""
-        # Número do lote
+        """Extract data from lot line"""
+        # Lot number
         lote_match = re.match(r'^(\d{12})', lote_text)
         if lote_match:
             lote_section['lote'] = lote_match.group(1)
@@ -174,38 +172,38 @@ class PDFLineParser:
         else:
             lote_section['bl_awb_ctrc'] = None
         
-        # Documento aduaneiro de entrada
+        # Customs entry document
         doc_entrada_match = re.search(r'([A-Z]{3}\s*-\s*\d{2}/\d+)\s*-\s*([A-Z0-9]+)', lote_text)
         if doc_entrada_match:
             lote_section['doc_aduan_de_entrada'] = f"{doc_entrada_match.group(1)} - {doc_entrada_match.group(2)}"
 
     def _extract_doc_aduaneiro_data(self, doc_text, lote_section):
-        """Extrai dados do documento aduaneiro"""
-        # Documento aduaneiro
+        """Extract data from customs document"""
+        # Customs document
         doc_match = re.search(r'DI\s+-\s+(\d{4}/\d+)', doc_text)
         if doc_match:
             lote_section['doc_aduaneiro_i'] = f"DI - {doc_match.group(1)}"
         
-        # Data de entrada e quantidade de container
+        # Entry date and container quantity
         data_match = re.search(r'(\d{2}/\d{2}/\d{4})\s+(\d+)', doc_text)
         if data_match:
             lote_section['data_entrada'] = data_match.group(1)
             lote_section['qtd_container'] = data_match.group(2)
 
     def _extract_valores_data(self, valores_text, lote_section):
-        """Extrai dados da linha de valores"""
-        # Valores FOB/CIF
+        """Extract data from values line"""
+        # FOB/CIF values
         valores_match = re.search(r'(\d+\.\d+,\d+)\s+(\d+\.\d+,\d+)', valores_text)
         if valores_match:
             lote_section['valor_fob_cif_rs'] = float(valores_match.group(1).replace('.', '').replace(',', '.'))
             lote_section['valor_fob_cif_us'] = float(valores_match.group(2).replace('.', '').replace(',', '.'))
         
-        # Quantidade do lote
+        # Lot quantity
         qtd_match = re.search(r'(\d+\.\d+,\d+)\s+(\d+\.\d+,\d+)\s+(\d+\.\d{2})', valores_text)
         if qtd_match:
             lote_section['qtd_lote'] = qtd_match.group(3)
         
-        # Datas de período
+        # Period dates
         datas_match = re.search(r'(\d{2}/\d{2}/\d{4})\s+a\s+(\d{2}/\d{2}/\d{4})', valores_text)
         if datas_match:
             lote_section['periodos_apuracao'] = f"{datas_match.group(1)} a {datas_match.group(2)}"
@@ -213,8 +211,8 @@ class PDFLineParser:
             lote_section['prazo_p_retirada'] = datas_match.group(2)
 
     def _search_additional_data(self, lines, valores_line, lote_section):
-        """Busca dados adicionais nas próximas linhas e no documento"""
-        # Busca nas próximas 5 linhas
+        """Search for additional data in next lines and document"""
+        # Search in next 5 lines
         for offset in range(1, 6):
             idx = valores_line + offset
             if idx >= len(lines):
@@ -222,24 +220,24 @@ class PDFLineParser:
             
             line = lines[idx]
             
-            # Datas de período
+            # Period dates
             datas_match = re.search(r'(\d{2}/\d{2}/\d{4})\s+a\s+(\d{2}/\d{2}/\d{4})', line)
             if datas_match:
                 lote_section['periodos_apuracao'] = f"{datas_match.group(1)} a {datas_match.group(2)}"
                 lote_section['fim_periodo_armaz'] = datas_match.group(2)
                 lote_section['prazo_p_retirada'] = datas_match.group(2)
             
-            # Dias
+            # Days
             dias_match = re.search(r'Dias:\s*(\d+)', line)
             if dias_match:
                 lote_section['dias'] = dias_match.group(1)
             
-            # Períodos de armazenagem
+            # Storage periods
             periodos_match = re.search(r'Perío[^:]*:\s*(\d+)', line)
             if periodos_match:
                 lote_section['periodos_armaz'] = periodos_match.group(1)
         
-        # Busca ampliada se não encontrou
+        # Extended search if not found
         if 'dias' not in lote_section:
             for line in lines:
                 if 'Dias:' in line:
@@ -257,7 +255,7 @@ class PDFLineParser:
                         break
 
     def _calculate_dias(self, lote_section):
-        """Calcula dias baseado nas datas de período"""
+        """Calculate days based on period dates"""
         if 'periodos_apuracao' in lote_section:
             try:
                 datas_text = lote_section['periodos_apuracao']
@@ -271,10 +269,10 @@ class PDFLineParser:
                 lote_section['dias'] = None
 
     def parse_pdf(self, pdf_path):
-        """Parse principal do PDF"""
+        """Main PDF parser"""
         lines = self.extract_text_by_lines(pdf_path)
         
-        # Inicializa resultado
+        # Initialize result
         result = {
             'header': {},
             'beneficiario': {},
@@ -288,7 +286,7 @@ class PDFLineParser:
             'informacoes do lote': {}
         }
         
-        # Processa campos mapeados
+        # Process mapped fields
         for line_num, field_configs in self.field_mapping.items():
             if line_num <= len(lines):
                 line_text = lines[line_num - 1]
@@ -298,37 +296,37 @@ class PDFLineParser:
                     if value:
                         self.set_nested_value(result, field_name, value)
         
-        # Processa tabelas dinâmicas
+        # Process dynamic tables
         self.parse_dynamic_tables(lines, result)
         
-        # Processa seção do lote
+        # Process lot section
         lote_section = {}
         line_indices = self._find_line_indices(lines)
         
-        # Extrai dados do lote
+        # Extract lot data
         if line_indices.get('lote') is not None:
             self._extract_lote_data(lines[line_indices['lote']], lote_section)
         
-        # Extrai documento aduaneiro
+        # Extract customs document
         if line_indices.get('doc_aduaneiro') is not None:
             self._extract_doc_aduaneiro_data(lines[line_indices['doc_aduaneiro']], lote_section)
         
-        # Extrai ref_cliente
+        # Extract ref_cliente
         lote_section['ref_cliente'] = self._extract_ref_cliente(lines, line_indices.get('ref'), lote_section)
         
-        # Extrai valores
+        # Extract values
         if line_indices.get('valores') is not None:
             self._extract_valores_data(lines[line_indices['valores']], lote_section)
             self._search_additional_data(lines, line_indices['valores'], lote_section)
         
-        # Calcula campos derivados
+        # Calculate derived fields
         self._calculate_dias(lote_section)
         
-        # Define valores padrão
+        # Set default values
         lote_section.setdefault('doc_aduaneiro_ii', '')
         lote_section.setdefault('bl_awb_ctrc', None)
         
-        # Define períodos de armazenagem baseado na tabela
+        # Set storage periods based on table
         if 'armazenagem' in result and 'fields' in result['armazenagem']:
             periodos = len(result['armazenagem']['fields'])
             lote_section['periodos_armaz'] = str(periodos)
@@ -337,41 +335,48 @@ class PDFLineParser:
         
         result['informacoes do lote'] = lote_section
         
-        # Finaliza resultado
+        # Finalize result
         self.clean_prefixes(result)
         self._normalize_fields(result)
         self._round_totals(result)
         
-        # Adiciona campos padrão
+        # Add default fields
         if 'faturar para' in result:
             result['faturar para']['im'] = None
         
         return result
 
     def _normalize_fields(self, result):
-        """Normaliza campos específicos"""
-        # Normaliza descrições de operações
+        """Normalize specific fields"""
+        # Normalize operation descriptions
         if 'operacao_servicos' in result and 'fields' in result['operacao_servicos']:
             for field in result['operacao_servicos']['fields']:
                 if 'descricao' in field:
                     field['descricao'] = self.normalize_string(field['descricao'])
         
-        # Normaliza porcentagens de armazenagem
+        # Normalize storage percentages
         if 'armazenagem' in result and 'fields' in result['armazenagem']:
             for field in result['armazenagem']['fields']:
-                if '%_armaz' in field:
-                    field['%_armaz'] = self.normalize_number(field['%_armaz'])
+                if 'percentual' in field:
+                    field['percentual'] = self.normalize_number(field['percentual'])
 
     def _round_totals(self, result):
-        """Arredonda totais das operações"""
+        """Round total values"""
+        if 'armazenagem' in result:
+            result['armazenagem']['total_armazenagem_periodos'] = self.round_decimal(
+                result['armazenagem']['total_armazenagem_periodos']
+            )
+        
         if 'operacao_servicos' in result:
-            if 'total_geral' in result['operacao_servicos']:
-                result['operacao_servicos']['total_geral'] = self.round_decimal(result['operacao_servicos']['total_geral'])
-            if 'total_operacao_servicos' in result['operacao_servicos']:
-                result['operacao_servicos']['total_operacao_servicos'] = self.round_decimal(result['operacao_servicos']['total_operacao_servicos'])
+            result['operacao_servicos']['total_operacao_servicos'] = self.round_decimal(
+                result['operacao_servicos']['total_operacao_servicos']
+            )
+            result['operacao_servicos']['total_geral'] = self.round_decimal(
+                result['operacao_servicos']['total_geral']
+            )
 
     def set_nested_value(self, data, field_path, value):
-        """Define valor em estrutura aninhada usando dot notation"""
+        """Set nested value in data structure"""
         keys = field_path.split('.')
         current = data
         
@@ -383,133 +388,132 @@ class PDFLineParser:
         current[keys[-1]] = value
 
     def parse_dynamic_tables(self, lines, result):
-        """Parse das tabelas dinâmicas (armazenagem e operações)"""
-        armazenagem_line = None
-        operacao_line = None
-        
+        """Parse dynamic tables in the document"""
         for i, line in enumerate(lines):
-            if 'A R M A Z E N A G E M' in line:
-                armazenagem_line = i
-            elif 'O P E R A Ç Ã O / S E R V I Ç O S' in line:
-                operacao_line = i
-        
-        if armazenagem_line is not None:
-            self.parse_armazenagem_table(lines, armazenagem_line, result)
-        
-        if operacao_line is not None:
-            self.parse_operacao_table(lines, operacao_line, result)
+            if 'ARMAZENAGEM' in line and 'PERÍODOS' in line:
+                self.parse_armazenagem_table(lines, i, result)
+            elif 'OPERAÇÃO' in line and 'SERVIÇOS' in line:
+                self.parse_operacao_table(lines, i, result)
 
     def parse_armazenagem_table(self, lines, start_line, result):
-        """Parse da tabela de armazenagem"""
-        if 'armazenagem' not in result:
-            result['armazenagem'] = {'fields': [], 'total_armazenagem_periodos': 0}
+        """Parse storage table"""
+        fields = []
         current_line = start_line + 1
-        total_armazenagem = 0.0
+        
         while current_line < len(lines):
             line = lines[current_line]
-            if 'TOTAL ARMADOS' in line or 'TOTAL GERAL' in line or 'O P E R A Ç Ã O' in line:
-                # Extrai o total da linha se presente
-                match = re.search(r'(\d+[\.,]\d+)$', line)
-                if match:
-                    total_armazenagem = float(match.group(1).replace(',', '.'))
+            
+            # Check for table end
+            if 'TOTAL ARMAZENAGEM' in line or 'OPERAÇÃO' in line:
                 break
-            if line.strip() and not line.startswith('Período'):
+            
+            # Parse table row
+            if re.match(r'^\d+', line):
                 parts = line.split()
-                if len(parts) >= 8:
-                    try:
-                        valor = float(parts[7].replace(',', '.'))
-                    except:
-                        valor = parts[7]
-                    armazenagem_item = {
-                        'inicio': parts[0],
-                        'final': parts[1],
-                        'periodo': parts[2],
-                        'qtde_pecas': parts[3],
-                        'carregado': parts[4],
-                        'saldo': parts[5],
-                        '%_armaz': parts[6],
-                        'total_armaz_rs': valor
+                if len(parts) >= 4:
+                    field = {
+                        'periodo': parts[0],
+                        'dias': parts[1],
+                        'percentual': self.normalize_number(parts[2]),
+                        'valor': self.normalize_number(parts[3])
                     }
-                    result['armazenagem']['fields'].append(armazenagem_item)
+                    fields.append(field)
+            
             current_line += 1
-        result['armazenagem']['total_armazenagem_periodos'] = total_armazenagem
+        
+        result['armazenagem']['fields'] = fields
+        result['armazenagem']['total_armazenagem_periodos'] = sum(
+            field['valor'] for field in fields
+        )
 
     def parse_operacao_table(self, lines, start_line, result):
-        """Parse da tabela de operações/serviços"""
-        if 'operacao_servicos' not in result:
-            result['operacao_servicos'] = {'fields': [], 'total_operacao_servicos': 0, 'total_geral': 0}
+        """Parse operation table"""
+        fields = []
         current_line = start_line + 1
-        total_operacao = 0.0
-        total_geral = None
+        
         while current_line < len(lines):
             line = lines[current_line]
-            if 'TOTAL GERAL' in line or 'O B S E R V A Ç' in line:
-                match = re.search(r'(\d+[\.,]\d+)$', line)
-                if match:
-                    total_geral = float(match.group(1).replace(',', '.'))
+            
+            # Check for table end
+            if 'TOTAL OPERAÇÃO' in line or 'TOTAL GERAL' in line:
                 break
-            if line.strip() and not line.startswith('Descrição'):
-                # Regex para capturar: código - descrição ... qtd rs_unitario total_oper_rs
-                match = re.match(r'^(\d+\s*-\s*.+?)\s+(\d+\.\d+)\s+([\d,.]+)\s+([\d,.]+)$', line)
-                if match:
-                    descricao = match.group(1).strip()
-                    qtd = match.group(2)
-                    rs_unitario = float(match.group(3).replace(',', '.'))
-                    total_oper_rs = float(match.group(4).replace(',', '.'))
-                    operacao_item = {
-                        'descricao': descricao,
-                        'qtd': qtd,
-                        'rs_unitario': rs_unitario,
-                        'total_oper_rs': total_oper_rs
-                    }
-                    result['operacao_servicos']['fields'].append(operacao_item)
+            
+            # Parse table row using regex
+            # Regex to capture: code - description ... qty unit_price total_operation_rs
+            match = re.match(r'^(\d+)\s*-\s*(.+?)\s+(\d+)\s+([\d,]+)\s+([\d,]+)', line)
+            if match:
+                field = {
+                    'codigo': match.group(1),
+                    'descricao': self.normalize_string(match.group(2)),
+                    'quantidade': int(match.group(3)),
+                    'valor_unitario': self.normalize_number(match.group(4)),
+                    'total_operacao_rs': self.normalize_number(match.group(5))
+                }
+                fields.append(field)
+            
             current_line += 1
-        result['operacao_servicos']['total_operacao_servicos'] = sum([f['total_oper_rs'] for f in result['operacao_servicos']['fields']])
-        if total_geral is not None:
-            result['operacao_servicos']['total_geral'] = total_geral
-        else:
-            result['operacao_servicos']['total_geral'] = result.get('armazenagem', {}).get('total_armazenagem_periodos', 0) + result['operacao_servicos']['total_operacao_servicos']
+        
+        result['operacao_servicos']['fields'] = fields
+        result['operacao_servicos']['total_operacao_servicos'] = sum(
+            field['total_operacao_rs'] for field in fields
+        )
+        
+        # Calculate total geral
+        armazenagem_total = result['armazenagem']['total_armazenagem_periodos']
+        operacao_total = result['operacao_servicos']['total_operacao_servicos']
+        result['operacao_servicos']['total_geral'] = armazenagem_total + operacao_total
 
     def clean_prefixes(self, data):
-        """Remove prefixos indesejados dos campos"""
+        """Clean prefixes from field values"""
         if isinstance(data, dict):
             for key, value in data.items():
                 if isinstance(value, str):
-                    if value.startswith(':'):
-                        data[key] = value[1:]
-                    elif value.endswith(' IM:'):
-                        data[key] = value[:-4]
-                elif isinstance(value, (dict, list)):
+                    # Remove common prefixes
+                    prefixes_to_remove = ['Código:', 'Nome:', 'CNPJ/CPF:', 'Endereço:', 'Bairro:', 'Cidade:', 'Estado:', 'CEP:', 'IE:']
+                    for prefix in prefixes_to_remove:
+                        if value.startswith(prefix):
+                            value = value[len(prefix):].strip()
+                            data[key] = value
+                elif isinstance(value, dict):
                     self.clean_prefixes(value)
-        elif isinstance(data, list):
-            for item in data:
-                self.clean_prefixes(item)
+                elif isinstance(value, list):
+                    for item in value:
+                        if isinstance(item, dict):
+                            self.clean_prefixes(item)
 
     def normalize_string(self, text):
-        """Normaliza string removendo espaços extras"""
-        if text is None:
-            return ''
-        normalized = re.sub(r'\s+', ' ', text.strip())
-        normalized = re.sub(r'\s+\(', '(', normalized)
-        normalized = re.sub(r'\)\s+', ')', normalized)
-        return normalized
-    
+        """Normalize string by removing extra spaces and special characters"""
+        if not text:
+            return text
+        return ' '.join(text.split())
+
     def normalize_number(self, value):
-        """Normaliza números para formato consistente"""
+        """Normalize number by converting string to float"""
+        if isinstance(value, (int, float)):
+            return float(value)
         if isinstance(value, str):
-            if ',' in value and '.' in value:
-                value = value.replace('.', '').replace(',', '.')
-            elif ',' in value and '.' not in value:
+            # Remove currency symbols and convert comma to dot
+            value = value.replace('R$', '').replace('$', '').replace(' ', '')
+            # Se houver apenas uma vírgula e nenhum ponto, é decimal brasileiro
+            if value.count(',') == 1 and value.count('.') == 0:
                 value = value.replace(',', '.')
-        return value
+            # Se houver ponto como separador de milhar e vírgula como decimal
+            elif value.count('.') > 0 and value.count(',') == 1:
+                value = value.replace('.', '').replace(',', '.')
+            try:
+                return float(value)
+            except ValueError:
+                return 0.0
+        return 0.0
 
     def round_decimal(self, value, places=2):
-        """Arredonda valores decimais"""
-        if isinstance(value, (int, float)):
-            return round(value, places)
-        return value
+        """Round decimal value to specified places"""
+        try:
+            return round(float(value), places)
+        except (ValueError, TypeError):
+            return 0.0
 
 def analyze_pdf(pdf_path):
-    """Função principal para análise do PDF"""
+    """Main function to analyze PDF"""
     parser = PDFLineParser()
     return parser.parse_pdf(pdf_path) 

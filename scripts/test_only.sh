@@ -2,7 +2,7 @@
 set -e
 
 echo "==========================================="
-echo "Running PDFtoJSON Unit Tests"
+echo "Running PDFtoJSON Unit Tests (Standalone)"
 echo "==========================================="
 
 # Check if we're in a Docker environment

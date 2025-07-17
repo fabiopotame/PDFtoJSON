@@ -1,0 +1,471 @@
+#!/usr/bin/env python3
+"""
+Script to create Oracle views directly in Python
+Creates VW_PDFTOJSON_SECTIONS and VW_PDFTOJSON_FIELDS views
+"""
+
+import os
+import sys
+import cx_Oracle
+from dotenv import load_dotenv
+import logging
+
+# Logging configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Load environment variables
+load_dotenv()
+
+def setup_oracle_client():
+    """Configure Oracle client"""
+    try:
+        # Configure TNS_ADMIN to use wallet
+        wallet_path = os.path.join(os.path.dirname(__file__), '..', 'oracle')
+        os.environ['TNS_ADMIN'] = wallet_path
+        logger.info(f"TNS_ADMIN configured: {wallet_path}")
+        
+        # Check if wallet files exist
+        required_files = ['tnsnames.ora', 'sqlnet.ora', 'cwallet.sso']
+        for file in required_files:
+            file_path = os.path.join(wallet_path, file)
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"Wallet file not found: {file_path}")
+        
+        logger.info("Oracle wallet configured successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Error configuring Oracle wallet: {e}")
+        return False
+
+def get_oracle_connection():
+    """Create Oracle connection using wallet"""
+    try:
+        username = os.getenv('ORACLE_USERNAME', 'ADMIN')
+        password = os.getenv('ORACLE_PASSWORD')
+        service_name = os.getenv('ORACLE_SERVICE_NAME', 'nh66vvfwukxku4dc_high')
+        
+        if not password:
+            raise ValueError("ORACLE_PASSWORD not found in environment variables")
+        
+        # Connection using wallet
+        connection = cx_Oracle.connect(
+            user=username,
+            password=password,
+            dsn=service_name
+        )
+        
+        logger.info("Oracle connection established successfully")
+        return connection
+    except Exception as e:
+        logger.error(f"Error connecting to Oracle: {e}")
+        return None
+
+def create_view_sections(connection):
+    """Create VW_PDFTOJSON_SECTIONS view"""
+    try:
+        cursor = connection.cursor()
+        
+        # First, remove view if it exists
+        try:
+            cursor.execute("DROP VIEW VW_PDFTOJSON_SECTIONS")
+            logger.info("VW_PDFTOJSON_SECTIONS view removed")
+        except:
+            pass  # Doesn't exist, that's fine
+        
+        # View SQL
+        sql = """
+        CREATE VIEW VW_PDFTOJSON_SECTIONS AS
+        SELECT
+          p.ID,
+          p.DOCUMENT_TYPE,
+          p.DOCUMENT_FILENAME,
+          p.DOCUMENT_PATH,
+          p.DATE_CREATED,
+          jt.SECTION_INDEX,
+          jt.TITLE,
+          jt.QUANTITY,
+          jt.TOTAL,
+          jt.Cliente,
+          jt.CNPJ,
+          jt.Navio,
+          jt.Atracao,
+          jt.Demonstrativo,
+          jt.Valor_Bruto,
+          jt.Moeda
+        FROM
+          PDFTOJSON p,
+          JSON_TABLE(
+            get_json_varchar(p.CONTENT) FORMAT JSON,
+            '$'
+            COLUMNS (
+              Cliente        VARCHAR2(255) PATH '$.header."Cliente (Customer)"' NULL ON EMPTY,
+              CNPJ           VARCHAR2(20)  PATH '$.header."CNPJ (TAX_ID)"' NULL ON EMPTY,
+              Navio          VARCHAR2(255) PATH '$.header."Navio (Viessel)"' NULL ON EMPTY,
+              Atracao        VARCHAR2(100) PATH '$.header."Atração (BERTH_ATA)"' NULL ON EMPTY,
+              Demonstrativo  VARCHAR2(100) PATH '$.header."Demonstrativo (Draft)"' NULL ON EMPTY,
+              Valor_Bruto    NUMBER        PATH '$.header."Valor Bruto"' NULL ON EMPTY,
+              Moeda          VARCHAR2(10)  PATH '$.header."Moeda"' NULL ON EMPTY,
+              NESTED PATH '$.sections[*]'
+              COLUMNS (
+                SECTION_INDEX FOR ORDINALITY,
+                TITLE         VARCHAR2(255) PATH '$.Title' NULL ON EMPTY,
+                QUANTITY      NUMBER        PATH '$."Quantidade (Quantity)"' NULL ON EMPTY,
+                TOTAL         NUMBER        PATH '$.Total' NULL ON EMPTY
+              )
+            )
+          ) jt
+        """
+        
+        cursor.execute(sql)
+        connection.commit()
+        cursor.close()
+        
+        logger.info("VW_PDFTOJSON_SECTIONS view created successfully")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error creating VW_PDFTOJSON_SECTIONS view: {e}")
+        connection.rollback()
+        return False
+
+def create_view_fields(connection):
+    """Create VW_PDFTOJSON_FIELDS view"""
+    try:
+        cursor = connection.cursor()
+        
+        # First, remove view if it exists
+        try:
+            cursor.execute("DROP VIEW VW_PDFTOJSON_FIELDS")
+            logger.info("VW_PDFTOJSON_FIELDS view removed")
+        except:
+            pass  # Doesn't exist, that's fine
+        
+        # View SQL
+        sql = """
+        CREATE VIEW VW_PDFTOJSON_FIELDS AS
+        SELECT
+          p.ID,
+          f.SECTION_INDEX,
+          f.FIELD_INDEX,
+          f.Data_Inicial,
+          f.Data_Final,
+          f.Container,
+          f.Categoria,
+          f.Armador,
+          f.Importador,
+          f.CNPJ_CPF,
+          f.Valor,
+          f.Moeda
+        FROM
+          PDFTOJSON p,
+          JSON_TABLE(
+            get_json_varchar(p.CONTENT) FORMAT JSON,
+            '$.sections[*]'
+            COLUMNS (
+              SECTION_INDEX FOR ORDINALITY,
+              NESTED PATH '$.fields[*]'
+              COLUMNS (
+                FIELD_INDEX     FOR ORDINALITY,
+                Data_Inicial    VARCHAR2(20)  PATH '$."Data Inicial (Start Time)"' NULL ON EMPTY,
+                Data_Final      VARCHAR2(20)  PATH '$."Data Final (End Time)"' NULL ON EMPTY,
+                Container       VARCHAR2(30)  PATH '$."Container (Equipment ID)"' NULL ON EMPTY,
+                Categoria       VARCHAR2(20)  PATH '$."Categoria (Category)"' NULL ON EMPTY,
+                Armador         VARCHAR2(100) PATH '$."Armador (Line)"' NULL ON EMPTY,
+                Importador      VARCHAR2(255) PATH '$."Importador/Exportador (Consignee / Shipper)"' NULL ON EMPTY,
+                CNPJ_CPF        VARCHAR2(20)  PATH '$."CNPJ / CPF (ID)"' NULL ON EMPTY,
+                Valor           VARCHAR2(20)  PATH '$."Valor (Unit Value)"' NULL ON EMPTY,
+                Moeda           VARCHAR2(10)  PATH '$."Moeda (Currency)"' NULL ON EMPTY
+              )
+            )
+          ) f
+        """
+        
+        cursor.execute(sql)
+        connection.commit()
+        cursor.close()
+        
+        logger.info("VW_PDFTOJSON_FIELDS view created successfully")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error creating VW_PDFTOJSON_FIELDS view: {e}")
+        connection.rollback()
+        return False
+
+def create_view_full(connection):
+    """Create VW_PDFTOJSON_FULL view"""
+    try:
+        cursor = connection.cursor()
+        
+        # First, remove view if it exists
+        try:
+            cursor.execute("DROP VIEW vw_pdftojson_full")
+            logger.info("vw_pdftojson_full view removed")
+        except:
+            pass  # Doesn't exist, that's fine
+        
+        # View SQL
+        sql = """
+        CREATE OR REPLACE VIEW vw_pdftojson_full AS
+        SELECT
+          p.id,
+          p.document_filename,
+          p.date_created,
+          root.document_type,
+          root.observacoes,
+          hdr.capa,
+          hdr.demonstrativo,
+          hdr.nota_fiscal,
+          hdr.regime,
+          hdr.tarifa_01,
+          hdr.opcao_tarifa,
+          ben.codigo AS ben_codigo,
+          ben.nome AS ben_nome,
+          ben.cnpj_cpf AS ben_cnpj_cpf,
+          comiss.codigo AS com_codigo,
+          comiss.nome AS com_nome,
+          comiss.cnpj_cpf AS com_cnpj_cpf,
+          cli.codigo AS cli_codigo,
+          cli.nome AS cli_nome,
+          cli.endereco AS cli_endereco,
+          cli.bairro AS cli_bairro,
+          cli.cidade AS cli_cidade,
+          cli.estado AS cli_estado,
+          cli.cep AS cli_cep,
+          cli.cnpj_cpf AS cli_cnpj_cpf,
+          cli.ie AS cli_ie,
+          fat.codigo AS fat_codigo,
+          fat.nome AS fat_nome,
+          fat.endereco AS fat_endereco,
+          fat.bairro AS fat_bairro,
+          fat.cidade AS fat_cidade,
+          fat.estado AS fat_estado,
+          fat.cep AS fat_cep,
+          fat.cnpj_cpf AS fat_cnpj_cpf,
+          fat.ie AS fat_ie,
+          fat.im AS fat_im,
+          tar.moeda AS tar_moeda,
+          TO_DATE(tar.cotacao,'DD/MM/YYYY') AS tar_cotacao_data,
+          tar.valor_cotacao AS tar_valor_cotacao,
+          arm_total.total_armazenagem_periodos,
+          arm_elem.arm_idx AS arm_idx,
+          arm_elem.arm_inicio AS arm_inicio,
+          arm_elem.arm_final AS arm_final,
+          arm_elem.arm_periodo AS arm_periodo,
+          arm_elem.arm_qtde_pecas AS arm_qtde_pecas,
+          arm_elem.arm_carregado AS arm_carregado,
+          arm_elem.arm_saldo AS arm_saldo,
+          arm_elem.arm_pct_armaz AS arm_pct_armaz,
+          arm_elem.arm_total_armaz_rs AS arm_total_armaz_rs,
+          ops_total.total_operacao_servicos,
+          ops_total.total_geral,
+          ops_elem.descricao AS ops_descricao,
+          ops_elem.qtd AS ops_qtd,
+          ops_elem.rs_unitario AS ops_rs_unitario,
+          ops_elem.total_oper_rs AS ops_total_oper_rs,
+          lote.lote AS lote_numero,
+          lote.bl_awb_ctrc AS lote_bl_awb_ctrc,
+          lote.doc_aduan_de_entrada AS lote_doc_aduan_entrada,
+          lote.doc_aduaneiro_i AS lote_doc_aduaneiro_i,
+          TO_DATE(lote.data_entrada,'DD/MM/YYYY') AS lote_data_entrada,
+          lote.qtd_container AS lote_qtd_container,
+          lote.ref_cliente AS lote_ref_cliente,
+          lote.valor_fob_cif_rs AS lote_valor_fob_cif_rs,
+          lote.valor_fob_cif_us AS lote_valor_fob_cif_us,
+          lote.qtd_lote AS lote_qtd_lote,
+          lote.periodos_apuracao AS lote_periodos_apuracao,
+          TO_DATE(lote.fim_periodo_armaz,'DD/MM/YYYY') AS lote_fim_periodo_armaz,
+          TO_DATE(lote.prazo_p_retirada,'DD/MM/YYYY') AS lote_prazo_retirada,
+          lote.dias AS lote_dias,
+          lote.doc_aduaneiro_ii AS lote_doc_aduaneiro_ii,
+          lote.periodos_armaz AS lote_periodos_armaz,
+          lote.document_type AS lote_document_type
+        FROM pdftojson p
+        CROSS JOIN JSON_TABLE(
+          p.content, '$'
+          COLUMNS (
+            document_type VARCHAR2(50) PATH '$.document_type',
+            observacoes VARCHAR2(4000) PATH '$.observacoes'
+          )
+        ) root
+        CROSS JOIN JSON_TABLE(
+          p.content, '$.header'
+          COLUMNS (
+            capa VARCHAR2(50) PATH '$.capa',
+            demonstrativo VARCHAR2(50) PATH '$.demonstrativo',
+            nota_fiscal VARCHAR2(50) PATH '$.nota_fiscal',
+            regime VARCHAR2(100) PATH '$.regime',
+            tarifa_01 VARCHAR2(100) PATH '$."tarifa 01"',
+            opcao_tarifa VARCHAR2(100) PATH '$.opcao_tarifa'
+          )
+        ) hdr
+        CROSS JOIN JSON_TABLE(
+          p.content, '$.beneficiario'
+          COLUMNS (
+            codigo VARCHAR2(20) PATH '$.codigo',
+            nome VARCHAR2(255) PATH '$.nome',
+            cnpj_cpf VARCHAR2(20) PATH '$.cnpj_cpf'
+          )
+        ) ben
+        CROSS JOIN JSON_TABLE(
+          p.content, '$.comissaria'
+          COLUMNS (
+            codigo VARCHAR2(20) PATH '$.codigo',
+            nome VARCHAR2(255) PATH '$.nome',
+            cnpj_cpf VARCHAR2(20) PATH '$.cnpj_cpf'
+          )
+        ) comiss
+        CROSS JOIN JSON_TABLE(
+          p.content, '$.cliente'
+          COLUMNS (
+            codigo VARCHAR2(20) PATH '$.codigo',
+            nome VARCHAR2(255) PATH '$.nome',
+            endereco VARCHAR2(500) PATH '$.endereco',
+            bairro VARCHAR2(100) PATH '$.bairro',
+            cidade VARCHAR2(100) PATH '$.cidade',
+            estado VARCHAR2(10) PATH '$.estado',
+            cep VARCHAR2(20) PATH '$.cep',
+            cnpj_cpf VARCHAR2(20) PATH '$.cnpj_cpf',
+            ie VARCHAR2(50) PATH '$.ie'
+          )
+        ) cli
+        CROSS JOIN JSON_TABLE(
+          p.content, '$."faturar para"'
+          COLUMNS (
+            codigo VARCHAR2(20) PATH '$.codigo',
+            nome VARCHAR2(255) PATH '$.nome',
+            endereco VARCHAR2(500) PATH '$.endereco',
+            bairro VARCHAR2(100) PATH '$.bairro',
+            cidade VARCHAR2(100) PATH '$.cidade',
+            estado VARCHAR2(10) PATH '$.estado',
+            cep VARCHAR2(20) PATH '$.cep',
+            cnpj_cpf VARCHAR2(20) PATH '$.cnpj_cpf',
+            ie VARCHAR2(50) PATH '$.ie',
+            im VARCHAR2(50) PATH '$.im'
+          )
+        ) fat
+        CROSS JOIN JSON_TABLE(
+          p.content, '$."tarifas aplicadas"'
+          COLUMNS (
+            moeda VARCHAR2(50) PATH '$.moeda',
+            cotacao VARCHAR2(20) PATH '$.cotacao',
+            valor_cotacao NUMBER PATH '$.valor_cotacao'
+          )
+        ) tar
+        CROSS JOIN JSON_TABLE(
+          p.content, '$.armazenagem'
+          COLUMNS (
+            total_armazenagem_periodos NUMBER PATH '$.total_armazenagem_periodos'
+          )
+        ) arm_total
+        LEFT JOIN JSON_TABLE(
+          p.content, '$.armazenagem.fields[*]'
+          COLUMNS (
+            arm_idx FOR ORDINALITY,
+            arm_inicio VARCHAR2(20) PATH '$.inicio',
+            arm_final VARCHAR2(20) PATH '$.final',
+            arm_periodo VARCHAR2(20) PATH '$.periodo',
+            arm_qtde_pecas VARCHAR2(20) PATH '$.qtde_pecas',
+            arm_carregado VARCHAR2(20) PATH '$.carregado',
+            arm_saldo VARCHAR2(20) PATH '$.saldo',
+            arm_pct_armaz VARCHAR2(20) PATH '$."%_armaz"',
+            arm_total_armaz_rs NUMBER PATH '$.total_armaz_rs'
+          )
+        ) arm_elem ON (1=1)
+        CROSS JOIN JSON_TABLE(
+          p.content, '$.operacao_servicos'
+          COLUMNS (
+            total_operacao_servicos NUMBER PATH '$.total_operacao_servicos',
+            total_geral NUMBER PATH '$.total_geral'
+          )
+        ) ops_total
+        LEFT JOIN JSON_TABLE(
+          p.content, '$.operacao_servicos.fields[*]'
+          COLUMNS (
+            descricao VARCHAR2(255) PATH '$.descricao',
+            qtd VARCHAR2(20) PATH '$.qtd',
+            rs_unitario NUMBER PATH '$.rs_unitario',
+            total_oper_rs NUMBER PATH '$.total_oper_rs'
+          )
+        ) ops_elem ON (1=1)
+        CROSS JOIN JSON_TABLE(
+          p.content, '$."informacoes do lote"'
+          COLUMNS (
+            lote VARCHAR2(50) PATH '$.lote',
+            bl_awb_ctrc VARCHAR2(50) PATH '$.bl_awb_ctrc',
+            doc_aduan_de_entrada VARCHAR2(255) PATH '$.doc_aduan_de_entrada',
+            doc_aduaneiro_i VARCHAR2(255) PATH '$.doc_aduaneiro_i',
+            data_entrada VARCHAR2(20) PATH '$.data_entrada',
+            qtd_container VARCHAR2(20) PATH '$.qtd_container',
+            ref_cliente VARCHAR2(50) PATH '$.ref_cliente',
+            valor_fob_cif_rs NUMBER PATH '$.valor_fob_cif_rs',
+            valor_fob_cif_us NUMBER PATH '$.valor_fob_cif_us',
+            qtd_lote VARCHAR2(20) PATH '$.qtd_lote',
+            periodos_apuracao VARCHAR2(100) PATH '$.periodos_apuracao',
+            fim_periodo_armaz VARCHAR2(20) PATH '$.fim_periodo_armaz',
+            prazo_p_retirada VARCHAR2(20) PATH '$.prazo_p_retirada',
+            dias VARCHAR2(10) PATH '$.dias',
+            doc_aduaneiro_ii VARCHAR2(255) PATH '$.doc_aduaneiro_ii',
+            periodos_armaz VARCHAR2(100) PATH '$.periodos_armaz',
+            document_type VARCHAR2(50) PATH '$.document_type'
+          )
+        ) lote
+        """
+        
+        cursor.execute(sql)
+        connection.commit()
+        cursor.close()
+        
+        logger.info("vw_pdftojson_full view created successfully")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error creating vw_pdftojson_full view: {e}")
+        connection.rollback()
+        return False
+
+def main():
+    """Main function"""
+    logger.info("Starting view creation...")
+    
+    # Configure Oracle client
+    if not setup_oracle_client():
+        logger.error("Failed to configure Oracle client")
+        sys.exit(1)
+    
+    # Connect to database
+    connection = get_oracle_connection()
+    if not connection:
+        logger.error("Failed to connect to Oracle")
+        sys.exit(1)
+    
+    try:
+        # Create VW_PDFTOJSON_SECTIONS view
+        if not create_view_sections(connection):
+            logger.error("Failed to create VW_PDFTOJSON_SECTIONS view")
+            sys.exit(1)
+        
+        # Create VW_PDFTOJSON_FIELDS view
+        if not create_view_fields(connection):
+            logger.error("Failed to create VW_PDFTOJSON_FIELDS view")
+            sys.exit(1)
+        
+        # Create vw_pdftojson_full view
+        if not create_view_full(connection):
+            logger.error("Failed to create vw_pdftojson_full view")
+            sys.exit(1)
+        
+        logger.info("All views created successfully!")
+        
+    except Exception as e:
+        logger.error(f"Error during view creation: {e}")
+        sys.exit(1)
+    finally:
+        connection.close()
+
+if __name__ == "__main__":
+    main() 
