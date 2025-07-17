@@ -24,7 +24,7 @@ def extract_document_title(pdf_path):
 
 def analyze_document_by_type(pdf_path):
     """
-    Identifica o tipo de documento e chama o parser apropriado
+    Identifies document type and calls appropriate parser
     """
     try:
         title = extract_document_title(pdf_path)
@@ -39,21 +39,21 @@ def analyze_document_by_type(pdf_path):
             }
         
         if title == "DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS":
-            # Usar document_001.py (parser de coordenadas)
+            # Use document_001.py (coordinate parser)
             with open(pdf_path, 'rb') as pdf_file:
                 result = read_pdf_and_analyze(pdf_file)
             result["document_type"] = "DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS"
             return result
         
         elif "DEMONSTRATIVO DE CÁLCULO" in title:
-            # Usar document_002.py (parser de linhas)
+            # Use document_002.py (line parser)
             parser = PDFLineParser()
             result = parser.parse_pdf(pdf_path)
             result["document_type"] = "DEMONSTRATIVO DE CÁLCULO"
             return result
         
         else:
-            # Documento não reconhecido
+            # Document not recognized
             return {
                 "error": "Document type not recognized",
                 "document_title": title,

@@ -80,7 +80,42 @@ python app.py
 
 ## 🧪 Testes
 
-Leia o README na pasta tests
+### Executar Testes com Docker
+
+```bash
+# Executar testes standalone (sem iniciar a API)
+docker-compose run test-standalone
+
+# Executar testes após iniciar a API
+docker-compose run test
+
+# Executar API e testes juntos
+docker-compose up api test
+```
+
+### Executar Testes Localmente
+
+```bash
+# Executar todos os testes
+python3 -m unittest discover tests -v
+
+# Executar um teste específico
+python3 -m unittest tests.test_identify_document -v
+
+# Usar o script de testes
+bash scripts/test_only.sh
+```
+
+### Cobertura de Testes
+
+Os testes cobrem:
+- ✅ Parsers de documento (coordenadas e linhas)
+- ✅ Identificação automática de tipo de documento
+- ✅ Roteamento para parser correto
+- ✅ Casos de borda e tratamento de erros
+- ✅ Validação de dados extraídos
+
+Leia o README na pasta `tests/` para mais detalhes.
 
 ## 📱 Como usar o Front-end
 
@@ -96,6 +131,7 @@ Leia o README na pasta tests
 - PyPDF2 (Processamento de PDF)
 - pdfplumber (Extração de tabelas)
 - Flask-CORS (Suporte a CORS)
+- Oracle Database (Armazenamento)
 
 ### Frontend:
 - HTML5 + CSS3 + JavaScript
@@ -110,13 +146,20 @@ PDFtoJSON/
 ├── app.py                 # Aplicação Flask principal
 ├── config.py              # Configurações
 ├── requirements.txt       # Dependências Python
+├── docker-compose.yml     # Configuração Docker
 ├── static/
 │   └── index.html        # Front-end web
 ├── pdf2json/             # Módulo de processamento
 │   ├── identify_document.py
 │   ├── document_001.py
 │   └── document_002.py
-├── tests/                # Testes
+├── db/                   # Módulo de banco de dados
+│   └── oracle_connection.py
+├── tests/                # Testes unitários
 ├── scripts/              # Scripts utilitários
+│   ├── start.sh         # Script de inicialização
+│   ├── run_tests.sh     # Script de testes
+│   └── test_only.sh     # Script de testes standalone
+├── oracle/              # Wallet Oracle
 └── README.md
 ```

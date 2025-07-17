@@ -9,3 +9,24 @@ services:
     environment:
       - HOST=0.0.0.0
       - PORT=8085
+    command: bash scripts/start.sh
+
+  test:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8085
+    command: bash scripts/run_tests.sh
+    depends_on:
+      - api
+
+  test-standalone:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8085
+    command: bash scripts/test_only.sh
