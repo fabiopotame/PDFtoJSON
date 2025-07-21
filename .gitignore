@@ -9,6 +9,7 @@ venv
 *.egg-info/
 dist/
 build/
+oracle/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
