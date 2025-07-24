@@ -10,6 +10,7 @@ import oracledb
 from pathlib import Path
 from dotenv import load_dotenv
 import logging
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from db.oracle_connection import get_oracle_connection
 
 # Logging configuration
