@@ -39,8 +39,7 @@ def oracle_info():
         
         return jsonify({
             "oracle_config": info,
-            "connection_type": "TCP",
-            "service_levels": list(info['service_levels'].keys())
+            "connection_type": "TCP"
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500

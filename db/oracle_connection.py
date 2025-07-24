@@ -5,6 +5,7 @@ import shutil
 from datetime import datetime
 from config import ORACLE_CONFIG
 import logging
+import subprocess
 
 class OracleManager:
     def __init__(self):
@@ -13,8 +14,19 @@ class OracleManager:
         # Removido setup_wallet()
         
     def get_connection(self):
-        """Create Oracle TCP connection (sem wallet)"""
+        """Create Oracle TCP connection"""
         try:
+            # Ativar modo thick se possível
+            try:
+                if os.path.isdir("/instantclient"):
+                    logging.info(f"[INFO] Ativando modo thick com Oracle Client: /instantclient")
+                    oracledb.init_oracle_client(lib_dir="/instantclient")
+                else:
+                    logging.info(f"[INFO] Instant Client não encontrado em /instantclient, usando modo thin.")
+            except Exception as e:
+                logging.error(f"[ERRO] Falha ao iniciar modo thick: {e}")
+                logging.info("[INFO] Continuando em modo thin.")
+
             dsn = oracledb.makedsn(
                 self.config['host'], 
                 self.config['port'], 
@@ -297,8 +309,9 @@ class OracleManager:
     def get_connection_info(self):
         """Return information about configured connection"""
         return {
-            'dsn': self.config['dsn'],
             'user': self.config['user'],
-            'wallet_dir': self.config['wallet_dir'],
-            'service_levels': self.config['service_levels']
+            'host': self.config['host'],
+            'port': self.config['port'],
+            'service_name': self.config['service_name'],
+            'encoding': self.config['encoding']
         } 
