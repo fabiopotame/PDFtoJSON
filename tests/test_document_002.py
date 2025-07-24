@@ -215,19 +215,19 @@ class TestPDFLineParser(unittest.TestCase):
         self.assertIn('informacoes do lote', result)
         self.assertIn('observacoes', result)
         
-        # Check specific values - these may not be present due to field mapping
+        # Check specific values - these may not be present devido ao mapeamento dos campos
         if 'capa' in result.get('header', {}):
-        self.assertEqual(result['header']['capa'], '101139')
+            self.assertEqual(result['header']['capa'], '101139')
         if 'demonstrativo' in result.get('header', {}):
-        self.assertEqual(result['header']['demonstrativo'], '105515')
+            self.assertEqual(result['header']['demonstrativo'], '105515')
         if 'nota_fiscal' in result.get('header', {}):
-        self.assertEqual(result['header']['nota_fiscal'], '000075260')
+            self.assertEqual(result['header']['nota_fiscal'], '000075260')
         if 'codigo' in result.get('beneficiario', {}):
-        self.assertEqual(result['beneficiario']['codigo'], '001951')
+            self.assertEqual(result['beneficiario']['codigo'], '001951')
         if 'nome' in result.get('beneficiario', {}):
-        self.assertEqual(result['beneficiario']['nome'], 'DANURI IMPORTACAO E EXPORTACAO LTDA')
+            self.assertEqual(result['beneficiario']['nome'], 'DANURI IMPORTACAO E EXPORTACAO LTDA')
         if 'cnpj_cpf' in result.get('beneficiario', {}):
-        self.assertEqual(result['beneficiario']['cnpj_cpf'], '11771754000161')
+            self.assertEqual(result['beneficiario']['cnpj_cpf'], '11771754000161')
     
     def test_parse_pdf_with_missing_data(self):
         """Test PDF parsing with missing data"""

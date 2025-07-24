@@ -6,7 +6,7 @@ Creates VW_PDFTOJSON_SECTIONS and VW_PDFTOJSON_FIELDS views
 
 import os
 import sys
-import cx_Oracle
+import oracledb
 from dotenv import load_dotenv
 import logging
 
@@ -52,10 +52,20 @@ def get_oracle_connection():
             raise ValueError("ORACLE_PASSWORD not found in environment variables")
         
         # Connection using wallet
-        connection = cx_Oracle.connect(
+        # Ajustar dsn para modo TCP
+        # Exemplo:
+        # dsn = oracledb.makedsn(host, port, service_name=service_name)
+        # connection = oracledb.connect(user=username, password=password, dsn=dsn)
+        # Para simplificar, vamos usar o TNS_ADMIN
+        dsn = oracledb.makedsn(
+            os.getenv('ORACLE_HOST', 'localhost'),
+            os.getenv('ORACLE_PORT', '1521'),
+            service_name=service_name
+        )
+        connection = oracledb.connect(
             user=username,
             password=password,
-            dsn=service_name
+            dsn=dsn
         )
         
         logger.info("Oracle connection established successfully")

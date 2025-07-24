@@ -6,7 +6,7 @@ Checks and creates PDFTOJSON table and necessary views
 
 import os
 import sys
-import cx_Oracle
+import oracledb
 from pathlib import Path
 from dotenv import load_dotenv
 import logging
@@ -21,27 +21,6 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
-def setup_oracle_client():
-    """Configure Oracle client"""
-    try:
-        # Configure TNS_ADMIN to use wallet
-        wallet_path = os.path.join(os.path.dirname(__file__), '..', 'oracle')
-        os.environ['TNS_ADMIN'] = wallet_path
-        logger.info(f"TNS_ADMIN configured: {wallet_path}")
-        
-        # Check if wallet files exist
-        required_files = ['tnsnames.ora', 'sqlnet.ora', 'cwallet.sso']
-        for file in required_files:
-            file_path = os.path.join(wallet_path, file)
-            if not os.path.exists(file_path):
-                raise FileNotFoundError(f"Wallet file not found: {file_path}")
-        
-        logger.info("Oracle wallet configured successfully")
-        return True
-    except Exception as e:
-        logger.error(f"Error configuring Oracle wallet: {e}")
-        return False
-
 def get_oracle_connection():
     """Create Oracle connection using wallet"""
     try:
@@ -53,11 +32,12 @@ def get_oracle_connection():
             raise ValueError("ORACLE_PASSWORD not found in environment variables")
         
         # Connection using wallet
-        connection = cx_Oracle.connect(
-            user=username,
-            password=password,
-            dsn=service_name
-        )
+        # Ajustar dsn para modo TCP
+        # Exemplo:
+        # dsn = oracledb.makedsn(host, port, service_name=service_name)
+        # connection = oracledb.connect(user=username, password=password, dsn=dsn)
+        dsn = oracledb.makedsn(host='0.0.0.0', port=8085, service_name=service_name)
+        connection = oracledb.connect(user=username, password=password, dsn=dsn)
         
         logger.info("Oracle connection established successfully")
         return connection
@@ -555,9 +535,7 @@ def create_view_full(connection):
         connection.commit()
         cursor.close()
         
-        logger.info("vw_pdftojson_full view created successfully")
         return True
-        
     except Exception as e:
         logger.error(f"Error creating vw_pdftojson_full view: {e}")
         connection.rollback()
@@ -566,11 +544,6 @@ def create_view_full(connection):
 def main():
     """Main function"""
     logger.info("Starting Oracle database configuration...")
-    
-    # Configure Oracle client
-    if not setup_oracle_client():
-        logger.error("Failed to configure Oracle client")
-        sys.exit(1)
     
     # Connect to database
     connection = get_oracle_connection()

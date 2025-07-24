@@ -1,4 +1,4 @@
-import cx_Oracle
+import oracledb
 import json
 import os
 import shutil
@@ -10,32 +10,12 @@ class OracleManager:
     def __init__(self):
         self.config = ORACLE_CONFIG
         self.documents_path = "documents"
-        self.setup_wallet()
-        
-    def setup_wallet(self):
-        """Configure Oracle wallet"""
-        # Set TNS_ADMIN to wallet directory
-        os.environ['TNS_ADMIN'] = self.config['wallet_dir']
-        
-        # Check if wallet directory exists
-        if not os.path.exists(self.config['wallet_dir']):
-            raise Exception(f"Wallet directory not found: {self.config['wallet_dir']}")
-        
-        # Check if essential wallet files exist
-        required_files = ['tnsnames.ora', 'sqlnet.ora', 'cwallet.sso']
-        for file in required_files:
-            file_path = os.path.join(self.config['wallet_dir'], file)
-            if not os.path.exists(file_path):
-                raise Exception(f"Wallet file not found: {file_path}")
-        
-        logging.info(f"Oracle wallet configured: {self.config['wallet_dir']}")
+        # Removido setup_wallet()
         
     def get_connection(self):
-        """Create Oracle connection using wallet"""
+        """Create Oracle TCP connection (sem wallet)"""
         try:
-            # For Oracle Autonomous Database with wallet, use only user, password and dsn
-            # The wallet will be used automatically through TNS_ADMIN
-            connection = cx_Oracle.connect(
+            connection = oracledb.connect(
                 user=self.config['user'],
                 password=self.config['password'],
                 dsn=self.config['dsn'],
@@ -105,7 +85,7 @@ class OracleManager:
             """
             
             # Variable to capture returned ID
-            id_var = cursor.var(cx_Oracle.NUMBER)
+            id_var = cursor.var(oracledb.NUMBER)
             
             # Insert with temporary path
             cursor.execute(sql, {

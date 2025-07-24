@@ -8,10 +8,10 @@ echo "==========================================="
 # Check if .env file exists
 if [ ! -f .env ]; then
     echo "ERROR: .env file not found!"
-    echo "Create a .env file with Oracle settings:"
-    echo "ORACLE_USERNAME=ADMIN"
+    echo "Create a .env file com as variáveis de conexão TCP:"
+    echo "ORACLE_USER=ADMIN"
     echo "ORACLE_PASSWORD=YourPassword"
-    echo "ORACLE_SERVICE_NAME=nh66vvfwukxku4dc_high"
+    echo "ORACLE_DSN=host:port/service_name"
     exit 1
 fi
 

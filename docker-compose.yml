@@ -30,3 +30,12 @@ services:
       - HOST=0.0.0.0
       - PORT=8085
     command: bash scripts/test_only.sh
+
+  test-db-connection:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8085
+    command: python3 scripts/test_db_connection.py
