@@ -10,6 +10,7 @@ import oracledb
 from dotenv import load_dotenv
 import logging
 import subprocess
+from db.oracle_connection import get_oracle_connection
 
 # Configuração de logging
 logging.basicConfig(
@@ -24,32 +25,10 @@ load_dotenv()
 def test_oracle_connection():
     """Testar conexão Oracle via TCP"""
     try:
-        username = os.getenv('ORACLE_USER')
-        password = os.getenv('ORACLE_PASSWORD')
-        host = os.getenv('ORACLE_HOST')
-        port = int(os.getenv('ORACLE_PORT'))
-        service_name = os.getenv('ORACLE_SERVICE_NAME')
-
-        if not password:
-            logger.error("ORACLE_PASSWORD não encontrado nas variáveis de ambiente")
+        connection = get_oracle_connection()
+        if not connection:
+            logger.error("❌ Erro ao conectar com Oracle")
             return False
-
-        try:
-            if os.path.isdir("/instantclient"):
-                logger.info(f"[INFO] Ativando modo thick com Oracle Client: /instantclient")
-                oracledb.init_oracle_client(lib_dir="/instantclient")
-            else:
-                logger.info(f"[INFO] Instant Client não encontrado em /instantclient, usando modo thin.")
-        except Exception as e:
-            logger.error(f"[ERRO] Falha ao iniciar modo thick: {e}")
-            logger.info("[INFO] Continuando em modo thin.")
-
-
-        logger.info(f"Tentando conectar com usuário: {username}")
-        logger.info(f"Host: {host}, User: {username}, Senha: {password}, Porta: {port}, Service Name: {service_name}")
-
-        dsn = oracledb.makedsn(host, port, service_name=service_name)
-        connection = oracledb.connect(user=username, password=password, dsn=dsn)
 
         logger.info("✅ Conexão Oracle estabelecida com sucesso!")
 

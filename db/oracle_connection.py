@@ -5,18 +5,52 @@ import shutil
 from datetime import datetime
 from config import ORACLE_CONFIG
 import logging
-import subprocess
+
+def get_oracle_connection():
+    """
+    Retorna uma conexão Oracle, ativando modo thick se possível.
+    """
+    import oracledb
+    import os
+    import logging
+    from config import ORACLE_CONFIG
+    try:
+        # Ativar modo thick
+        try:
+            if os.path.isdir("/instantclient"):
+                logging.info("[INFO] Ativando modo thick com Oracle Client: /instantclient")
+                oracledb.init_oracle_client(lib_dir="/instantclient")
+            else:
+                logging.info("[INFO] Instant Client não encontrado em /instantclient, usando modo thin.")
+        except Exception as e:
+            logging.error(f"[ERRO] Falha ao iniciar modo thick: {e}")
+            logging.info("[INFO] Continuando em modo thin.")
+
+        dsn = oracledb.makedsn(
+            ORACLE_CONFIG['host'],
+            ORACLE_CONFIG['port'],
+            service_name=ORACLE_CONFIG['service_name']
+        )
+        connection = oracledb.connect(
+            user=ORACLE_CONFIG['user'],
+            password=ORACLE_CONFIG['password'],
+            dsn=dsn,
+            encoding=ORACLE_CONFIG['encoding']
+        )
+        return connection
+    except Exception as e:
+        logging.error(f"Error connecting to Oracle: {e}")
+        return None
 
 class OracleManager:
     def __init__(self):
         self.config = ORACLE_CONFIG
         self.documents_path = "documents"
-        # Removido setup_wallet()
         
     def get_connection(self):
         """Create Oracle TCP connection"""
         try:
-            # Ativar modo thick se possível
+            # Ativar modo thick
             try:
                 if os.path.isdir("/instantclient"):
                     logging.info(f"[INFO] Ativando modo thick com Oracle Client: /instantclient")

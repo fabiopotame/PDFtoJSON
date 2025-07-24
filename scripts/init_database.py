@@ -10,6 +10,7 @@ import oracledb
 from pathlib import Path
 from dotenv import load_dotenv
 import logging
+from db.oracle_connection import get_oracle_connection
 
 # Logging configuration
 logging.basicConfig(
@@ -20,28 +21,6 @@ logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
-
-def get_oracle_connection():
-    """Create Oracle connection using TCP (sem wallet)"""
-    try:
-        username = os.getenv('ORACLE_USER', 'ADMIN')
-        password = os.getenv('ORACLE_PASSWORD')
-        host = os.getenv('ORACLE_HOST')
-        port = int(os.getenv('ORACLE_PORT'))
-        service_name = os.getenv('ORACLE_SERVICE_NAME')
-        
-        if not password:
-            raise ValueError("ORACLE_PASSWORD not found in environment variables")
-        
-        # Connection using TCP (sem wallet)
-        dsn = oracledb.makedsn(host, port, service_name=service_name)
-        connection = oracledb.connect(user=username, password=password, dsn=dsn)
-        
-        logger.info("Oracle connection established successfully")
-        return connection
-    except Exception as e:
-        logger.error(f"Error connecting to Oracle: {e}")
-        return None
 
 def table_exists(connection, table_name):
     """Check if table exists"""
