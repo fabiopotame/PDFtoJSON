@@ -38,4 +38,4 @@ services:
     environment:
       - HOST=0.0.0.0
       - PORT=8085
-    command: python3 test_db_connection.py
+    command: python3 test_oracle_connection.py
