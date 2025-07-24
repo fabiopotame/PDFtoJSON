@@ -19,6 +19,8 @@ RUN apt-get update \
        python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
+ENV LD_LIBRARY_PATH=/instantclient
+
 WORKDIR /app
 
 COPY requirements.txt .

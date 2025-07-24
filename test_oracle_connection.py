@@ -9,6 +9,7 @@ import sys
 import oracledb
 from dotenv import load_dotenv
 import logging
+import subprocess
 
 # Configuração de logging
 logging.basicConfig(
@@ -29,18 +30,24 @@ def test_oracle_connection():
         port = int(os.getenv('ORACLE_PORT'))
         service_name = os.getenv('ORACLE_SERVICE_NAME')
 
-        INSTANT_CLIENT_PATH = "/instantclient"
-
         if not password:
             logger.error("ORACLE_PASSWORD não encontrado nas variáveis de ambiente")
             return False
 
+        # Listar conteúdo do Instant Client antes de tentar ativar o modo thick
+        logger.info('Conteúdo de /instantclient:')
         try:
-            if os.path.isdir(INSTANT_CLIENT_PATH):
-                logger.info(f"[INFO] Ativando modo thick com Oracle Client: {INSTANT_CLIENT_PATH}")
-                oracledb.init_oracle_client(lib_dir=INSTANT_CLIENT_PATH)
+            output = subprocess.check_output(['ls', '-l', '/instantclient']).decode()
+            logger.info('\n' + output)
+        except Exception as e:
+            logger.error(f'Erro ao listar /instantclient: {e}')
+
+        try:
+            if os.path.isdir("/instantclient"):
+                logger.info(f"[INFO] Ativando modo thick com Oracle Client: /instantclient")
+                oracledb.init_oracle_client(lib_dir="/instantclient")
             else:
-                logger.info(f"[INFO] Instant Client não encontrado em {INSTANT_CLIENT_PATH}, usando modo thin.")
+                logger.info(f"[INFO] Instant Client não encontrado em /instantclient, usando modo thin.")
         except Exception as e:
             logger.error(f"[ERRO] Falha ao iniciar modo thick: {e}")
             logger.info("[INFO] Continuando em modo thin.")
