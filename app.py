@@ -164,7 +164,7 @@ def analyze_document():
                 os.unlink(temp_file_path)
             except:
                 pass
-
+        
 @app.route('/test-oracle', methods=['GET'])
 def test_oracle():
     """Endpoint to test Oracle connection"""

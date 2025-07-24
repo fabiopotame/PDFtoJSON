@@ -8,7 +8,7 @@ load_dotenv()
 HOST = os.getenv('HOST', '0.0.0.0')
 PORT = int(os.getenv('PORT', 8085))
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
-CORS_HEADERS = 'Content-Type'
+CORS_HEADERS = 'Content-Type' 
 
 # Oracle Autonomous Database configuration using wallet
 ORACLE_WALLET_DIR = os.path.join(os.getcwd(), 'oracle')
