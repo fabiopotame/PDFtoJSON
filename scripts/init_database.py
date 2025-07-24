@@ -26,9 +26,9 @@ def get_oracle_connection():
     try:
         username = os.getenv('ORACLE_USER', 'ADMIN')
         password = os.getenv('ORACLE_PASSWORD')
-        host = os.getenv('ORACLE_HOST', 'adb.sa-saopaulo-1.oraclecloud.com')
-        port = int(os.getenv('ORACLE_PORT', 1521))
-        service_name = os.getenv('ORACLE_SERVICE_NAME', 'gb8f3e57eee6934_nh66vvfwukxku4dc_high.adb.oraclecloud.com')
+        host = os.getenv('ORACLE_HOST')
+        port = int(os.getenv('ORACLE_PORT'))
+        service_name = os.getenv('ORACLE_SERVICE_NAME')
         
         if not password:
             raise ValueError("ORACLE_PASSWORD not found in environment variables")
