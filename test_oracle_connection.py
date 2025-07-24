@@ -23,18 +23,18 @@ load_dotenv()
 def test_oracle_connection():
     """Testar conexão Oracle via TCP"""
     try:
-        username = os.getenv('ORACLE_USER', 'ADMIN')
+        username = os.getenv('ORACLE_USER')
         password = os.getenv('ORACLE_PASSWORD')
-        host = os.getenv('ORACLE_HOST', 'adb.sa-saopaulo-1.oraclecloud.com')
-        port = int(os.getenv('ORACLE_PORT', 1521))
-        service_name = os.getenv('ORACLE_SERVICE_NAME', 'gb8f3e57eee6934_nh66vvfwukxku4dc_high.adb.oraclecloud.com')
+        host = os.getenv('ORACLE_HOST')
+        port = int(os.getenv('ORACLE_PORT'))
+        service_name = os.getenv('ORACLE_SERVICE_NAME')
 
         if not password:
             logger.error("ORACLE_PASSWORD não encontrado nas variáveis de ambiente")
             return False
 
         logger.info(f"Tentando conectar com usuário: {username}")
-        logger.info(f"Host: {host}, Porta: {port}, Service Name: {service_name}")
+        logger.info(f"Host: {host}, User: {username}, Senha: {password}, Porta: {port}, Service Name: {service_name}")
 
         dsn = oracledb.makedsn(host, port, service_name=service_name)
         connection = oracledb.connect(user=username, password=password, dsn=dsn)
