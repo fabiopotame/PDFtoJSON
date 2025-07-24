@@ -1,5 +1,7 @@
 FROM python:3.12-slim
 
+USER root
+
 # Instalar dependências do sistema
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -13,6 +15,7 @@ RUN apt-get update \
        build-essential \
        libffi-dev \
        libssl-dev \
+       libaio1 \
        python3-dev \
     && rm -rf /var/lib/apt/lists/*
 

@@ -29,7 +29,7 @@ def test_oracle_connection():
         port = int(os.getenv('ORACLE_PORT'))
         service_name = os.getenv('ORACLE_SERVICE_NAME')
 
-        INSTANT_CLIENT_PATH = "/app/instantclient"
+        INSTANT_CLIENT_PATH = "/instantclient"
 
         if not password:
             logger.error("ORACLE_PASSWORD não encontrado nas variáveis de ambiente")
