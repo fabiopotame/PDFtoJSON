@@ -34,8 +34,7 @@ def get_oracle_connection():
         connection = oracledb.connect(
             user=ORACLE_CONFIG['user'],
             password=ORACLE_CONFIG['password'],
-            dsn=dsn,
-            encoding=ORACLE_CONFIG['encoding']
+            dsn=dsn
         )
         return connection
     except Exception as e:
