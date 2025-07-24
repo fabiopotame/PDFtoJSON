@@ -6,7 +6,7 @@ Verifica se a conexão com o banco Oracle está funcionando corretamente
 
 import os
 import sys
-import oracledb  # Trocar cx_Oracle por oracledb
+import oracledb
 from dotenv import load_dotenv
 import logging
 
