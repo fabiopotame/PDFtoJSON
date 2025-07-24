@@ -21,52 +21,29 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 def setup_oracle_client():
-    """Configure Oracle client"""
+    """Setup Oracle client for TCP connection (sem wallet)"""
     try:
-        # Configure TNS_ADMIN to use wallet
-        wallet_path = os.path.join(os.path.dirname(__file__), '..', 'oracle')
-        os.environ['TNS_ADMIN'] = wallet_path
-        logger.info(f"TNS_ADMIN configured: {wallet_path}")
-        
-        # Check if wallet files exist
-        required_files = ['tnsnames.ora', 'sqlnet.ora', 'cwallet.sso']
-        for file in required_files:
-            file_path = os.path.join(wallet_path, file)
-            if not os.path.exists(file_path):
-                raise FileNotFoundError(f"Wallet file not found: {file_path}")
-        
-        logger.info("Oracle wallet configured successfully")
+        logger.info("Oracle client configured for TCP connection")
         return True
     except Exception as e:
-        logger.error(f"Error configuring Oracle wallet: {e}")
+        logger.error(f"Error configuring Oracle client: {e}")
         return False
 
 def get_oracle_connection():
-    """Create Oracle connection using wallet"""
+    """Create Oracle connection using TCP (sem wallet)"""
     try:
-        username = os.getenv('ORACLE_USERNAME', 'ADMIN')
+        username = os.getenv('ORACLE_USER', 'ADMIN')
         password = os.getenv('ORACLE_PASSWORD')
-        service_name = os.getenv('ORACLE_SERVICE_NAME', 'nh66vvfwukxku4dc_high')
+        host = os.getenv('ORACLE_HOST', 'adb.sa-saopaulo-1.oraclecloud.com')
+        port = int(os.getenv('ORACLE_PORT', 1521))
+        service_name = os.getenv('ORACLE_SERVICE_NAME', 'gb8f3e57eee6934_nh66vvfwukxku4dc_high.adb.oraclecloud.com')
         
         if not password:
             raise ValueError("ORACLE_PASSWORD not found in environment variables")
         
-        # Connection using wallet
-        # Ajustar dsn para modo TCP
-        # Exemplo:
-        # dsn = oracledb.makedsn(host, port, service_name=service_name)
-        # connection = oracledb.connect(user=username, password=password, dsn=dsn)
-        # Para simplificar, vamos usar o TNS_ADMIN
-        dsn = oracledb.makedsn(
-            os.getenv('ORACLE_HOST', 'localhost'),
-            os.getenv('ORACLE_PORT', '1521'),
-            service_name=service_name
-        )
-        connection = oracledb.connect(
-            user=username,
-            password=password,
-            dsn=dsn
-        )
+        # Connection using TCP (sem wallet)
+        dsn = oracledb.makedsn(host, port, service_name=service_name)
+        connection = oracledb.connect(user=username, password=password, dsn=dsn)
         
         logger.info("Oracle connection established successfully")
         return connection

@@ -22,21 +22,19 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 def get_oracle_connection():
-    """Create Oracle connection using wallet"""
+    """Create Oracle connection using TCP (sem wallet)"""
     try:
-        username = os.getenv('ORACLE_USERNAME', 'ADMIN')
+        username = os.getenv('ORACLE_USER', 'ADMIN')
         password = os.getenv('ORACLE_PASSWORD')
-        service_name = os.getenv('ORACLE_SERVICE_NAME', 'nh66vvfwukxku4dc_high')
+        host = os.getenv('ORACLE_HOST', 'adb.sa-saopaulo-1.oraclecloud.com')
+        port = int(os.getenv('ORACLE_PORT', 1521))
+        service_name = os.getenv('ORACLE_SERVICE_NAME', 'gb8f3e57eee6934_nh66vvfwukxku4dc_high.adb.oraclecloud.com')
         
         if not password:
             raise ValueError("ORACLE_PASSWORD not found in environment variables")
         
-        # Connection using wallet
-        # Ajustar dsn para modo TCP
-        # Exemplo:
-        # dsn = oracledb.makedsn(host, port, service_name=service_name)
-        # connection = oracledb.connect(user=username, password=password, dsn=dsn)
-        dsn = oracledb.makedsn(host='0.0.0.0', port=8085, service_name=service_name)
+        # Connection using TCP (sem wallet)
+        dsn = oracledb.makedsn(host, port, service_name=service_name)
         connection = oracledb.connect(user=username, password=password, dsn=dsn)
         
         logger.info("Oracle connection established successfully")

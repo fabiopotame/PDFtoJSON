@@ -15,16 +15,21 @@ class OracleManager:
     def get_connection(self):
         """Create Oracle TCP connection (sem wallet)"""
         try:
+            dsn = oracledb.makedsn(
+                self.config['host'], 
+                self.config['port'], 
+                service_name=self.config['service_name']
+            )
             connection = oracledb.connect(
                 user=self.config['user'],
                 password=self.config['password'],
-                dsn=self.config['dsn'],
+                dsn=dsn,
                 encoding=self.config['encoding']
             )
             return connection
         except Exception as e:
             logging.error(f"Error connecting to Oracle: {e}")
-            raise
+            return None
     
     def ensure_documents_directory(self):
         """Ensure documents folder exists"""
@@ -266,18 +271,28 @@ class OracleManager:
             if connection:
                 connection.close()
                 
-    def test_connection(self):
-        """Test database connection"""
+    def get_status(self):
+        """Get connection status"""
         try:
             connection = self.get_connection()
-            cursor = connection.cursor()
-            cursor.execute("SELECT 1 FROM DUAL")
-            result = cursor.fetchone()
-            connection.close()
-            return result is not None
+            if connection:
+                cursor = connection.cursor()
+                cursor.execute("SELECT 1 FROM DUAL")
+                result = cursor.fetchone()
+                cursor.close()
+                connection.close()
+                
+                return {
+                    'status': 'connected',
+                    'message': 'Oracle connection successful',
+                    'connection_type': 'TCP'
+                }
         except Exception as e:
-            logging.error(f"Connection test error: {e}")
-            return False
+            return {
+                'status': 'error',
+                'message': str(e),
+                'connection_type': 'TCP'
+            }
             
     def get_connection_info(self):
         """Return information about configured connection"""

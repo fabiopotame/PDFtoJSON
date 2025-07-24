@@ -14,13 +14,15 @@ CORS_HEADERS = 'Content-Type'
 ORACLE_CONFIG = {
     'user': os.getenv('ORACLE_USER', 'ADMIN'),
     'password': os.getenv('ORACLE_PASSWORD'),
-    'dsn': os.getenv('ORACLE_DSN', 'nh66vvfwukxku4dc_high'),  # Exemplo: host:port/service_name
+    'host': os.getenv('ORACLE_HOST', 'adb.sa-saopaulo-1.oraclecloud.com'),
+    'port': int(os.getenv('ORACLE_PORT', 1521)),
+    'service_name': os.getenv('ORACLE_SERVICE_NAME', 'gb8f3e57eee6934_nh66vvfwukxku4dc_high.adb.oraclecloud.com'),
     'encoding': 'UTF-8',
     'service_levels': {
-        'high': 'nh66vvfwukxku4dc_high',
-        'medium': 'nh66vvfwukxku4dc_medium',
-        'low': 'nh66vvfwukxku4dc_low',
-        'tp': 'nh66vvfwukxku4dc_tp',
-        'tpurgent': 'nh66vvfwukxku4dc_tpurgent'
+        'high': 'gb8f3e57eee6934_nh66vvfwukxku4dc_high.adb.oraclecloud.com',
+        'medium': 'gb8f3e57eee6934_nh66vvfwukxku4dc_medium.adb.oraclecloud.com',
+        'low': 'gb8f3e57eee6934_nh66vvfwukxku4dc_low.adb.oraclecloud.com',
+        'tp': 'gb8f3e57eee6934_nh66vvfwukxku4dc_tp.adb.oraclecloud.com',
+        'tpurgent': 'gb8f3e57eee6934_nh66vvfwukxku4dc_tpurgent.adb.oraclecloud.com'
     }
 } 
