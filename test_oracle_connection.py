@@ -34,14 +34,6 @@ def test_oracle_connection():
             logger.error("ORACLE_PASSWORD não encontrado nas variáveis de ambiente")
             return False
 
-        # Listar conteúdo do Instant Client antes de tentar ativar o modo thick
-        logger.info('Conteúdo de /instantclient:')
-        try:
-            output = subprocess.check_output(['ls', '-l', '/instantclient']).decode()
-            logger.info('\n' + output)
-        except Exception as e:
-            logger.error(f'Erro ao listar /instantclient: {e}')
-
         try:
             if os.path.isdir("/instantclient"):
                 logger.info(f"[INFO] Ativando modo thick com Oracle Client: /instantclient")
@@ -57,7 +49,6 @@ def test_oracle_connection():
         logger.info(f"Host: {host}, User: {username}, Senha: {password}, Porta: {port}, Service Name: {service_name}")
 
         dsn = oracledb.makedsn(host, port, service_name=service_name)
-        oracledb.init_oracle_client(lib_dir="/home/ega/instantclient_21_13")
         connection = oracledb.connect(user=username, password=password, dsn=dsn)
 
         logger.info("✅ Conexão Oracle estabelecida com sucesso!")
