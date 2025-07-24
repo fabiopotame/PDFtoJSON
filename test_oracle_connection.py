@@ -29,14 +29,28 @@ def test_oracle_connection():
         port = int(os.getenv('ORACLE_PORT'))
         service_name = os.getenv('ORACLE_SERVICE_NAME')
 
+        INSTANT_CLIENT_PATH = "/instantclient"
+
         if not password:
             logger.error("ORACLE_PASSWORD não encontrado nas variáveis de ambiente")
             return False
+
+        try:
+            if os.path.isdir(INSTANT_CLIENT_PATH):
+                logger.info(f"[INFO] Ativando modo thick com Oracle Client: {INSTANT_CLIENT_PATH}")
+                oracledb.init_oracle_client(lib_dir=INSTANT_CLIENT_PATH)
+            else:
+                logger.info(f"[INFO] Instant Client não encontrado em {INSTANT_CLIENT_PATH}, usando modo thin.")
+        except Exception as e:
+            logger.error(f"[ERRO] Falha ao iniciar modo thick: {e}")
+            logger.info("[INFO] Continuando em modo thin.")
+
 
         logger.info(f"Tentando conectar com usuário: {username}")
         logger.info(f"Host: {host}, User: {username}, Senha: {password}, Porta: {port}, Service Name: {service_name}")
 
         dsn = oracledb.makedsn(host, port, service_name=service_name)
+        oracledb.init_oracle_client(lib_dir="/home/ega/instantclient_21_13")
         connection = oracledb.connect(user=username, password=password, dsn=dsn)
 
         logger.info("✅ Conexão Oracle estabelecida com sucesso!")

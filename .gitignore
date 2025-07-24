@@ -10,6 +10,7 @@ venv
 dist/
 build/
 oracle/
+documents/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -15,6 +15,7 @@ services:
     build: .
     volumes:
       - .:/app
+      - /usr/lib/oracle/instantclient_19_27:/instantclient
     environment:
       - HOST=0.0.0.0
       - PORT=8085
@@ -26,6 +27,7 @@ services:
     build: .
     volumes:
       - .:/app
+      - /usr/lib/oracle/instantclient_19_27:/instantclient
     environment:
       - HOST=0.0.0.0
       - PORT=8085
@@ -35,6 +37,7 @@ services:
     build: .
     volumes:
       - .:/app
+      - /usr/lib/oracle/instantclient_19_27:/instantclient
     environment:
       - HOST=0.0.0.0
       - PORT=8085
