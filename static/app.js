@@ -1,7 +1,7 @@
 // JavaScript para PDF to JSON Converter
 class PDFConverter {
     constructor() {
-        this.API_BASE_URL = 'http://localhost:8085';
+        this.API_BASE_URL = 'http://192.168.50.91:8085';
         this.initializeElements();
         this.setupEventListeners();
         this.checkApiStatus();
