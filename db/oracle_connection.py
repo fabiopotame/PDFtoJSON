@@ -68,8 +68,7 @@ class OracleManager:
             connection = oracledb.connect(
                 user=self.config['user'],
                 password=self.config['password'],
-                dsn=dsn,
-                encoding=self.config['encoding']
+                dsn=dsn
             )
             return connection
         except Exception as e:
@@ -332,6 +331,12 @@ class OracleManager:
                     'message': 'Oracle connection successful',
                     'connection_type': 'TCP'
                 }
+            else:
+                return {
+                    'status': 'error',
+                    'message': 'Failed to establish connection',
+                    'connection_type': 'TCP'
+                }
         except Exception as e:
             return {
                 'status': 'error',
@@ -345,6 +350,5 @@ class OracleManager:
             'user': self.config['user'],
             'host': self.config['host'],
             'port': self.config['port'],
-            'service_name': self.config['service_name'],
-            'encoding': self.config['encoding']
+            'service_name': self.config['service_name']
         } 

@@ -512,7 +512,7 @@ def create_view_full(connection):
         cursor.execute(sql)
         connection.commit()
         cursor.close()
-        
+
         return True
     except Exception as e:
         logger.error(f"Error creating vw_pdftojson_full view: {e}")

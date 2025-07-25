@@ -112,7 +112,7 @@ class TestAnalyzeDocumentByType(unittest.TestCase):
             with patch('builtins.open', mock_open(read_data=b'dummy_pdf_content')):
                 with patch('pdf2json.document_001.extract_header_info', return_value={'header': {'test': 'value'}}):
                     with patch('pdf2json.document_001.extract_data_with_header_mapping', return_value=[{'section': 'data'}]):
-                        result = analyze_document_by_type('dummy_path')
+                    result = analyze_document_by_type('dummy_path')
         
         self.assertIn('document_type', result)
         self.assertEqual(result['document_type'], "DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS")
@@ -186,10 +186,10 @@ class TestAnalyzeDocumentByTypeIntegration(unittest.TestCase):
             with patch('pdf2json.identify_document.extract_document_title', return_value="DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS"):
                 with patch('pdf2json.document_001.extract_header_info', return_value={'header': {'test': 'value'}}):
                     with patch('pdf2json.document_001.extract_data_with_header_mapping', return_value=[{'section': 'data'}]):
-                        result = analyze_document_by_type(temp_file_path)
+                    result = analyze_document_by_type(temp_file_path)
                     
                         self.assertIn('document_type', result)
-                        self.assertEqual(result['document_type'], "DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS")
+                    self.assertEqual(result['document_type'], "DEMONSTRATIVO DE CÁLCULO DE SERVIÇOS")
                         self.assertEqual(result['header'], {'test': 'value'})
         finally:
             # Clean up temporary file
@@ -243,7 +243,7 @@ class TestDocumentTypeEdgeCases(unittest.TestCase):
                         with patch('builtins.open', mock_open(read_data=b'dummy_pdf_content')):
                             with patch('pdf2json.document_001.extract_header_info', return_value={'header': {'test': 'value'}}):
                                 with patch('pdf2json.document_001.extract_data_with_header_mapping', return_value=[{'section': 'data'}]):
-                                    result = analyze_document_by_type('dummy_path')
+                                result = analyze_document_by_type('dummy_path')
                 else:  # DEMONSTRATIVO DE CÁLCULO
                     mock_result = {
                         'header': {'test': 'value'},

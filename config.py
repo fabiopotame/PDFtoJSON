@@ -16,6 +16,5 @@ ORACLE_CONFIG = {
     'password': os.getenv('ORACLE_PASSWORD'),
     'host': os.getenv('ORACLE_HOST'),
     'port': int(os.getenv('ORACLE_PORT')),
-    'service_name': os.getenv('ORACLE_SERVICE_NAME'),
-    'encoding': 'UTF-8'
+    'service_name': os.getenv('ORACLE_SERVICE_NAME')
 } 
